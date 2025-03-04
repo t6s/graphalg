@@ -370,11 +370,11 @@ Section is_complete_bipartite.
 Implicit Type G : llugraph.  
 
 Definition is_complete_bipartite_graph G :=
-  injective (fun e : `E(G) => `d(e)) /\
-    exists V_1 V_2 : {fset `V(G)},
-      fsetT `V(G) = V_1 `|` V_2 /\ V_1 `&` V_2 = fset0 /\
+  injective (fun e : `E G => `d e) /\
+    exists V_1 V_2 : {fset `V G},
+      fsetT (`V G) = V_1 `|` V_2 /\ V_1 `&` V_2 = fset0 /\
         forall v : V_1, forall w : V_2,
-        exists e : `E(G), `d(e) = [fset \val v; \val w].
+        exists e : `E G, `d e = [fset \val v; \val w].
 
 Lemma KV1V2_is_complete_bipartite (V1 V2 : finType) :
   is_complete_bipartite_graph (`K2 V1 V2 ).
@@ -415,11 +415,11 @@ Proof. by move=> ? ? ; inversion 1. Qed.
 
 
 Lemma card_VK2 (V1 V2 : finType) :
-  #| `V(`K2 V1 V2)| = (#| V1| + #| V2|)%N.
+  #| `V (`K2 V1 V2)| = (#| V1| + #| V2|)%N.
 Proof. exact: card_sum. Qed.
 
 Lemma card_EK2 (V1 V2 : finType) :
-  #| `E(`K2 V1 V2)| = (#| V1| *  #| V2|)%N.
+  #| `E (`K2 V1 V2)| = (#| V1| *  #| V2|)%N.
 Proof.
 rewrite /`K2 /= /CompleteBipartiteGraph.E /= .
 rewrite -cardfE /=.
