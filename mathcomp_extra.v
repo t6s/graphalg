@@ -152,6 +152,49 @@ Qed.
 
 End bigop_ext.
 
+Section misc.
+Local Open Scope fset_scope.
+
+Lemma xorP {b1 b2 : bool} :
+  reflect ((b1 = ~~ b2) * (~~ b1 = b2)) (xorb b1 b2).
+Proof. by case: b1; case: b2; apply: (iffP idP) => //=; case. Qed.
+
+Lemma eq_span_xor (T : eqType) [x] (a b : T) :
+  a != b -> (x == a) || (x == b) = xorb (x == a) (x == b).
+Proof.
+move=> ab.
+apply/idP/idP.
+  by move=> /orP [] /eqP ->; rewrite ?(eq_sym b a) (negPf ab) eqxx.
+move/xorP ->.
+exact: orNb.
+Qed.
+
+Lemma fset2_xor [K : choiceType] (x a b : K) :
+  a != b -> x \in [fset a; b] = xorb (x == a) (x == b).
+Proof. rewrite !inE; exact: eq_span_xor. Qed.
+
+Lemma inl_inj (T U : Type) : injective (@inl T U).
+Proof. by move=> ? ?; inversion 1. Qed.
+
+Lemma inr_inj (T U : Type) : injective (@inr T U).
+Proof. by move=> ? ?; inversion 1. Qed.
+
+Lemma id2b_andr (a b c : bool) : a && b = c && b -> b -> a = c.
+Proof.
+move=> Habc Hb.
+apply/idP/idP=> x; have/andP:= conj x Hb; [rewrite Habc | rewrite -Habc].
+all: by case/andP.
+Qed.
+
+Lemma id2b_andl (a b c : bool) : a && b = a && c -> a -> b = c.
+Proof.
+move=> Habc Ha.
+apply/idP/idP=> x; have/andP:= conj Ha x; [rewrite Habc | rewrite -Habc].
+all: by case/andP.
+Qed.
+
+End misc.
+
 Section finmap_ext.
 Local Open Scope fset_scope.
 
@@ -288,6 +331,18 @@ by rewrite !inE.
 Qed.
 *)
 
+Lemma enum_fsetT (T : finType) : enum (fsetT T) = Finite.enum T.
+Proof. by rewrite -enumT; apply: eq_enum=> t; rewrite inE. Qed.
+
+Lemma imfsetT (T : finType) (K : choiceType) (f : T -> K) :
+  [fset f x | x in fsetT T] = [fset f x | x in T].
+Proof.
+apply/eqP; rewrite eqEfsubset; apply/andP; split; apply/fsubsetP=> k.
+all: case/imfsetP=> t /= ? ->.
+all: apply/imfsetP; exists t=> //=.
+by rewrite inE.
+Qed.
+
 Lemma in_fsetT (K : finType) x : (x \in fsetT K) = (x \in K).
 Proof. by rewrite inE. Qed.
 
@@ -422,6 +477,29 @@ change ((fun p => let: (x,y):= p in x = y) (x,y)).
 by rewrite xyz.
 Qed.
 
+Lemma fsetUM_subMU (K : choiceType) (A B C D : {fset K}) :
+  (A `*` B) `|` (C `*` D) `<=` (A `|` C) `*` (B `|` D).
+Proof.
+apply/fsubsetP=> -[x y]; rewrite !inE /=.
+by case: (x \in A); case: (x \in B); case: (x \in C); case: (x \in D);
+   case: (y \in A); case: (y \in B); case: (y \in C); case: (y \in D).
+Qed.
+
+Lemma fset_disjUM (K : choiceType) (A B : {fset K}) :
+  [disjoint A & B] ->
+  (A `*` A) `|` (B `*` B) =  (A `|` B) `*` (A `|` B).
+Proof.
+move=> dAB.
+have dAB2: [disjoint A `*` A & B `*` B].
+  apply/fset0Pn=> -[] /= [] x y /[!inE] /= /andP [] /andP [] ? ? /andP [] ? ?.
+  move/fset0Pn: dAB; apply.
+  by exists x; rewrite inE; apply/andP; split.
+rewrite -[LHS]fsetU0 -[RHS]fsetU0 -!(eqP dAB2).
+apply/fsetP=> -[x y]; apply/idP/idP; rewrite !inE /=.
+  by case: (x \in A); case: (x \in B); case: (y \in A); case: (y \in B).
+case: (x \in A); case: (x \in B); case: (y \in A); case: (y \in B)=> //.
+Abort.
+
 Lemma fset_diagSM [K : choiceType] (A : {fset K}) : fset_diag A `<=` A `*` A.
 Proof.
 apply/fsubsetP=> x.
@@ -490,29 +568,6 @@ rewrite sum_nat_seq_neq0=> /hasP [] x xfsA _.
 by exists x; rewrite -msuppE.
 Qed.
 End multiset_ext.
-
-Section misc.
-Local Open Scope fset_scope.
-
-Lemma xorP {b1 b2 : bool} :
-  reflect ((b1 = ~~ b2) * (~~ b1 = b2)) (xorb b1 b2).
-Proof. by case: b1; case: b2; apply: (iffP idP) => //=; case. Qed.
-
-Lemma eq_span_xor (T : eqType) [x] (a b : T) :
-  a != b -> (x == a) || (x == b) = xorb (x == a) (x == b).
-Proof.
-move=> ab.
-apply/idP/idP.
-  by move=> /orP [] /eqP ->; rewrite ?(eq_sym b a) (negPf ab) eqxx.
-move/xorP ->.
-exact: orNb.
-Qed.
-
-Lemma fset2_xor [K : choiceType] (x a b : K) :
-  a != b -> x \in [fset a; b] = xorb (x == a) (x == b).
-Proof. rewrite !inE; exact: eq_span_xor. Qed.
-
-End misc.
 
 Section boolp_finmap_extra.
 Local Open Scope fset_scope.

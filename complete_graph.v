@@ -7,17 +7,19 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Import Order.Theory.
+
 Local Open Scope fset_scope.
 
 Section biboundary.
 Variable G : llugraph.
 
-Definition biboundary (e : `E(G)) :=
+Definition biboundary (e : `E G) :=
   let: exist (a, b) _ := cardfs2_sig (boundary_card2 e) in
   [fset (a, b); (b, a)].
 
-Lemma biboundaryE (e : `E(G)) (a b : `V(G)) :
- `d(e) = [fset a; b] -> biboundary e = [fset (a, b); (b, a)].
+Lemma biboundaryE (e : `E G) (a b : `V G) :
+ `d e = [fset a; b] -> biboundary e = [fset (a, b); (b, a)].
 Proof.
 move=> deab.
 have ab: a != b.
@@ -42,10 +44,28 @@ apply=> //.
 by move: uvab; rewrite [X in _ =i X -> _]fsetUC.
 Qed.
 
-Lemma in_biboundary (e : `E(G)) a b :
-  ((a, b) \in biboundary e) = (`d(e) == [fset a; b]).
+Lemma biboundary_fsetMDdiag (e : `E G) :
+  biboundary e = `d e `*` `d e `\` fset_diag (`d e).
 Proof.
-pose f (p : `V(G) * `V(G)) := let: (x,y) := p in [fset x; y].
+rewrite /biboundary.
+case: cardfs2_sig=> -[] a b /= [] ab ->.
+apply/eqP/fset_eqP=> x.
+rewrite (surjective_pairing x) !inE in_fset_diag !inE xpair_eqE.
+rewrite !(orb_andl, orb_andr) !(andb_orl, andb_orr) /=.
+move: (ab); apply: id2b_andr.
+have[->|x1a]:= eqVneq x.1 a=> /=.
+all: rewrite !((negPf ab), andbT, andbF, orbF) /=.
+all: have[->|x2a]:= eqVneq x.2 a=> /=.
+all: rewrite !((negPf ab), andbT, andbF, orbF, andbb) //=.
+  by rewrite (negPf x1a) andbF.
+have[->|x1b]:= eqVneq x.1 b=> //=.
+by rewrite eq_sym andNb.
+Qed.
+
+Lemma in_biboundary (e : `E G) a b :
+  ((a, b) \in biboundary e) = (`d e == [fset a; b]).
+Proof.
+pose f (p : `V G * `V G) := let: (x,y) := p in [fset x; y].
 apply/idP/idP.
   rewrite /biboundary.
   case: cardfs2_sig => -[u v] /= [] uv ->.
@@ -54,7 +74,7 @@ move /eqP /biboundaryE ->.
 by rewrite !inE eqxx.
 Qed.
 
-Lemma in_biboundary_neq (e : `E(G)) (a b : `V(G)) :
+Lemma in_biboundary_neq (e : `E G) (a b : `V G) :
   (a, b) \in biboundary e -> a != b.
 Proof.
 rewrite in_biboundary=> deab.
@@ -63,7 +83,7 @@ move/eqP/(congr1 (size \o val)).
 by rewrite /= fsetUid boundary_card2 cardfs1.
 Qed.
 
-Lemma cardfs_biboundary (e : `E(G)) : #|` biboundary e | = 2.
+Lemma cardfs_biboundary (e : `E G) : #|` biboundary e | = 2.
 Proof.
 rewrite /biboundary.
 case: cardfs2_sig => [] [u v] [uv deuv].
@@ -72,8 +92,8 @@ suff-> : (u, v) != (v, u) by [].
 by rewrite xpair_eqE (eq_sym v u) !(negPf uv).
 Qed.
 
-Lemma boundary_biboundary_eq (e f : `E(G)) :
- (`d(e) == `d(f)) = (biboundary e == biboundary f).
+Lemma boundary_biboundary_eq (e f : `E G) :
+ (`d e == `d f) = (biboundary e == biboundary f).
 Proof.
 have := cardfs2_sig (boundary_card2 e) => -[] [] a b /= [] ab deab.
 have := cardfs2_sig (boundary_card2 f) => -[] [] c d /= [] cd dfcd.
@@ -87,7 +107,8 @@ move/esym/eqP ->.
 by apply/eqP.
 Qed.
 
-Lemma ex_biboundary_eq (e f : `E(G)) :
+(* TODO: restate in terms of trivIset *)
+Lemma ex_biboundary_eq (e f : `E G) :
   (exists p, (p \in biboundary e) && (p \in biboundary f)) ->
   biboundary e = biboundary f.
 Proof.
@@ -96,7 +117,7 @@ by rewrite !in_biboundary => /eqP /biboundaryE -> /eqP /biboundaryE ->.
 Qed.
 
 Lemma boundary_biboundary_inj :
-  injective (fun e : `E(G) => `d(e)) <-> injective biboundary.
+  injective (fun e : `E G => `d e) <-> injective biboundary.
 Proof.
 by split; move=> H e f /eqP;
                  [ rewrite -boundary_biboundary_eq => /eqP
@@ -106,6 +127,7 @@ Qed.
 
 End biboundary.
 
+(* 0-coskeleton *)
 Module CompleteGraph.
 Section def.
 Variable V : finType.
@@ -124,162 +146,136 @@ Definition t := LooplessUndirectedGraph.mk axiom.
 End def.
 End CompleteGraph.
 
-Notation "`K T" := (CompleteGraph.t T) (at level 0, format "`K T").
+Notation "`K" := CompleteGraph.t (at level 0, format "`K").
 Notation "`K_ n" := (CompleteGraph.t 'I_n)
                      (at level 1, format "`K_ n").
 
+(* TODO?: define Module CompleteGraph using is_complete_graph *)
 Section is_complete_graph.
 Implicit Type G : llugraph.
 
 (*
-Definition is_KT G := isomorphic G (`K `V(G)).
+Definition is_KT G := isomorphic G (`K `V G).
 *)
 
 Definition is_complete_graph G :=
-  injective (fun e : `E(G) => `d(e)) /\
-    forall v w : `V(G), v != w -> exists e : `E(G), `d(e) = [fset v; w].
+  injective (fun e : `E G => `d e) /\
+    forall v w : `V G, v != w -> exists e : `E G, `d e = [fset v; w].
 
-Lemma KT_is_complete (T : finType) : is_complete_graph `K T.
+Lemma KT_is_complete (T : finType) : is_complete_graph (`K T).
 Proof.
 split; first by move=> *; apply: val_inj.
 move=> v w vw.
 have eP : [fset v; w] \in CompleteGraph.E T.
-  apply/imfsetP.
-  exists (v, w) => //=.
+  apply/imfsetP; exists (v, w) => //=.
   by rewrite !inE in_fset_diag in_fsetT /= vw.
 by exists [` eP] => /=.
 Qed.
 
-Lemma card_VKn n : #| `V(`K_n) | = n.
+Lemma card_VKn n : #| `V `K_n | = n.
 Proof. exact: card_ord. Qed.
 
 Lemma card_Ecomplete_aux G :
   is_complete_graph G ->
-  fcover [fset biboundary e | e in `E(G)]  =
-    (fsetT `V(G) `*` fsetT `V(G)) `\` fset_diag (fsetT `V(G)).
+  fcover [fset biboundary e | e in `E G]  =
+    (fsetT (`V G) `*` fsetT (`V G)) `\` fset_diag (fsetT (`V G)).
 Proof.
-move=> icg.
-apply/fsetP=> -[a b].
-apply/idP/idP.
-  move/bigfcupP => /= [] S /andP [Sbb _] abS.
-  apply: in_imfset => //.
-  rewrite /= !inE /=.
-  move: Sbb => /imfsetP [] e /= eE.
-  move: abS => /[swap] ->.
-  move/in_biboundary_neq => ab.
-  by rewrite in_fset_diag (negPf ab) andbF.
-rewrite !inE 2!andbT in_fset_diag negb_and in_fsetT /= => ab.
-apply/bigfcupP.
-exists [fset (a, b); (b, a)]; last by rewrite !inE eqxx.
-rewrite andbT.
-case: icg => _ /(_ _ _ ab).
-case => e.
-move/biboundaryE <-.
-apply/imfsetP => /=.
-by exists e.
+rewrite /is_complete_graph=> -[] d_inj d_surj.
+rewrite /fcover -imfsetT bigfcup_image.
+under eq_bigr do rewrite biboundary_fsetMDdiag.
+apply/fsetP=> -[a b]; apply/idP/idP.
+  move/bigfcupP=> [] S /andP ?.
+  rewrite !(inE, in_fset_diag) /=.
+  case: (a == b)=> //.
+  by rewrite andbT /= andbA andNb.
+rewrite !(inE, in_fset_diag) /= andbT => /[dup] ab /d_surj [] e deab.
+apply/bigfcupP; exists e; first by rewrite inE.
+rewrite !(inE, in_fset_diag) /= (negPf ab) andbF /=.
+by rewrite deab !inE !eqxx orbT.
 Qed.
 
 Lemma card_Ecomplete G :
-  is_complete_graph G -> (2 * #| `E(G) | = #| `V(G) | * (#| `V(G) | - 1)).
+  is_complete_graph G -> (2 * #| `E G | = #| `V G | * (#| `V G | - 1)).
 Proof.
-move=> icg.
-move: (icg) => /card_Ecomplete_aux /(congr1 (size \o val)) /=.
-rewrite cardfs_diagC.
-set X := #|` fsetT `V(G) |.
-set Y := #| `V(G) |.
-set P := (P in fcover P).
-have /eqP <- : trivIfset P.
-  apply/trivIfsetP=> p q /imfsetP [] e /= _ -> /imfsetP [] f /= _ -> bef.
-  apply/fdisjointP=> -[a b] abe.
-  apply/negP => abf.
-  move/negP: bef; apply; apply/eqP.
-  apply: ex_biboundary_eq.
-  by exists (a,b); rewrite abe abf.
-have-> : \sum_(B <- P) #|` B| = \sum_(B <- P) 2.
-  rewrite !big_seq.
-  apply: eq_bigr => b /imfsetP [] e _ ->.
-  by rewrite cardfs_biboundary.
-rewrite big_const_seq iter_addn count_predT addn0.
-rewrite card_imfset /=; last first.
-  apply/boundary_biboundary_inj.
-  by case: icg.
-rewrite cardE => ->.
-suff-> : X = Y by [].
-by rewrite /X card_imfset //= /Y cardE.
+move=> /[dup] -[] /boundary_biboundary_inj d_inj d_surj.
+move=> /card_Ecomplete_aux /(congr1 (size \o val)) /=.
+rewrite cardfs_diagC cardfsT => <-.
+rewrite (eqTleqif (leq_card_fcover _)); last first.
+  apply/trivIfsetP=> /= d1 d2 /imfsetP [] e1 ? -> /imfsetP [] e2 ? ->.
+  apply: contraR=> /fset0Pn [] /= p /[!inE] /andP [] p1 p2.
+  apply/eqP/ex_biboundary_eq.
+  by exists p; rewrite p1 p2.
+rewrite [RHS](_ : _ = \sum_(A <- [fset biboundary e | e in `E G]) 2).
+  rewrite big_const_seq iter_addn addn0 count_predT.
+  by rewrite card_imfset//= cardE.
+rewrite !big_seq.
+apply: eq_bigr => b /imfsetP [] e _ ->.
+by rewrite cardfs_biboundary.
 Qed.
 
 Lemma card_EG_leq_Ecomplete G :
-  injective (fun e : `E(G) => `d(e)) ->
-  (2 * #| `E(G) | <= #| `V(G) | * (#| `V(G) | - 1)).
+  injective (fun e : `E G => `d e) ->
+  (2 * #| `E G | <= #| `V G | * (#| `V G | - 1)).
 Proof.
 move=> ib.
-apply: (@leq_trans (2 * #| `E(`K(`V(G))) |)); last first.
-  rewrite (_ : #| `V(G) | = #| `V(`K(`V(G))) |) //.
+apply: (@leq_trans (2 * #| `E (`K (`V G)) |)); last first.
+  rewrite (_ : #| `V G | = #| `V (`K (`V G)) |) //.
   rewrite card_Ecomplete //.
   exact: KT_is_complete.
 rewrite leq_mul2l //=.
-have-> : #| `E(G) | = #|` [fset `d e | e in fsetT `E(G)] |.
+have-> : #| `E G | = #|` [fset `d e | e in fsetT (`E G)] |.
   by rewrite card_imfset //= cardfsT.
 rewrite -cardfE.
 apply/fsubset_leq_card/fsubsetP=> x.
 move/imfsetP=> [] e /= _ ->.
 apply/imfsetP => /=.
-have:= boundary_card2 e => /cardfs2_sig [] [] a b /= [] ab ->.
+have:= boundary_sig2 e => -[] [] a b /= [] ab ->.
 exists (a, b) => //.
 by rewrite !inE in_fset_diag in_fsetT (negPf ab).
 Qed.
 
 Lemma nindmatch_complete G :
   is_complete_graph G ->
-  nindmatch G <= 1 ?= iff (2 <= #| `V(G) |).
+  nindmatch G <= 1 ?= iff (2 <= #| `V G |).
 Proof.
 case=> /= injb cmp.
-have-> : (2 <= #| `V(G) |) = (1 <= #| `E(G) |).
+have-> : (2 <= #| `V G |) = (1 <= #| `E G |).
   apply/idP/idP.
-    move/card_gt1P => [] x [] y [] xVG yVG xy.
-    apply/card_gt0P.
+    move/card_gt1P=> [] x [] y [] xVG yVG xy.
     have:= cmp x y xy => -[] e dexy.
-    by exists e.
-  move/card_gt0P => [] e eEG.
-  apply/card_gt1P.
-  have:= boundary_card2 e => /cardfs2_sig [] [] x y /= [] xy dexy.
-  by exists x, y; split.
-apply/leqifP; case: ifPn; last first.
+    by apply/card_gt0P; exists e.
+  move/card_gt0P=> [] e eEG.
+  have:= boundary_sig2 e => -[] [] x y /= [] xy dexy.
+  by apply/card_gt1P; exists x, y; split.
+apply/leqifP; case: ifPn=> [EGgt0 |]; last first.
   by rewrite -leqNgt leqn0 => /eqP /nindmatch0 ->.
-move=> EGgt0.
-move/card_gt0P: (EGgt0) => [] e eEG.
-have eim: [fset e] \in induced_matching G.
-  by apply/induced_matchingP=> e0 e1 /[!inE] /eqP -> /eqP -> /[!eqxx].
-suff: forall M, M \in induced_matching G -> #|` M | <= 1.
-  move/bigmax_leqP=> H.
-  apply/eqP/anti_leq.
-  rewrite {}H /=.
-  rewrite/nindmatch.
-  have := (@leq_bigmax_cond {fset `E(G)} _ (fun x => #|` x |) [fset e] eim).
-  by rewrite cardfs1.
-move=> M /induced_matchingP H.
-apply/negbNE/negP; rewrite -ltnNge cardfE.
-move/card_gt1P => [] x [] y [] xM yM xy.
-have := H (val x) (val y).
-have /[swap]/[apply] : val x \in M by exact:fsvalP.
-have /[swap]/[apply] : val y \in M by exact:fsvalP.
-move/(_ xy).
-have := boundary_card2 (val x) => /cardfs2_sig [] [] a b /= [] ab dxab.
-have := boundary_card2 (val y) => /cardfs2_sig [] [] c d /= [] cd dycd.
-case/boolP: (a == c).
-  move=> /eqP ac /(_ (fsval x)).
-  rewrite dxab dycd ac.
-  case.
-    have: c \in [fset c; b] by rewrite !inE eqxx.
-    by move/fdisjointXX.
-  by move/fdisjointP=> /(_ c); rewrite !inE eqxx => /(_ erefl).
-move/cmp=> [] f dfac /(_ f) /[!dfac].
-by case=> /fdisjointP; [move/(_ a); rewrite dxab | move/(_ c); rewrite dycd ];
-   rewrite !inE eqxx /= ?orbT => /(_ erefl).
+have: 1 <= nindmatch G by rewrite ltnNge leqn0 nindmatch_eq0 -lt0n.
+rewrite leq_eqVlt=> /orP [/eqP -> // |]. 
+have:= exists_nindmatch G => -[] M Mim ->.
+have:= Mim => /induced_matchingP Mim'.
+rewrite cardfE=> /card_gt1P /= [] e1 [] e2 [] ? ? e12.
+exfalso.
+have: `d (\val e2) `\` `d (\val e1) != fset0.
+  rewrite fsetD_eq0; apply/negP=> /fsubset_leqif_cards.
+  rewrite !boundary_card2.
+  apply/leqif_refl/eqP=> /esym de12.
+  have:= matching_inj_boundary (induced_sub_matching Mim).
+  move/(_ (\val e1) (\val e2) (fsvalP _) (fsvalP _) de12)/val_inj.
+  by apply/eqP.
+pose v1 := get1_boundary (\val e1).
+case/fset0Pn=> v2 /[!in_fsetD] /andP [] ve1 ve2.
+have:= cmp v1 v2 => -[].
+  by apply/eqP; move: ve1=> /[swap] <- /[!get1_in_boundary].
+move=> e3 de3.
+have e12': \val e1 != \val e2.
+  by apply/eqP=> /val_inj; move: e12 => /[swap] ->; rewrite eqxx.
+have:= Mim' (\val e1) (\val e2) (fsvalP _) (fsvalP _) e12 e3.
+by case=> /fset0Pn; apply; [exists v1 | exists v2];
+   rewrite de3 !inE eqxx ?orbT andbT// get1_in_boundary.
 Qed.
 
-Lemma maximal_matching_complete G (S : {fset `E(G)}) :
-  is_complete_graph G -> S \in maximal_matching G ->  #|` S | = #| `V(G) | ./2.
+Lemma maximal_matching_complete G (S : {fset `E G}) :
+  is_complete_graph G -> S \in maximal_matching G ->  #|` S | = #| `V G | ./2.
 Proof.
 case=> injb cmp SmG.
 apply/eqP; move: SmG; apply: contraLR.
@@ -301,7 +297,7 @@ have := cmp a b ab => -[] e deab.
 have eS : e \notin S.
   apply/negP=> H.
   move/negP: aS; apply.
-  apply/bigfcupP; exists `d(e); last by rewrite deab !inE eqxx.
+  apply/bigfcupP; exists (`d e); last by rewrite deab !inE eqxx.
   by rewrite in_imfset.
 have := Smax (e |` S).
 move/(_ _)/negP; apply; first exact: fproperU1.
@@ -310,16 +306,16 @@ case/orP => [/eqP -> | xS]; case/orP => [/eqP -> | yS]; rewrite ?eqxx //= => xy.
 - apply/fdisjointP=> u.
   by rewrite deab !inE=> /orP [] /eqP ->; apply/negP => ad;
      [move/bigfcupP: aS | move/bigfcupP: bS];
-     apply; exists `d(y) => //; rewrite in_imfset.
+     apply; exists (`d y) => //; rewrite in_imfset.
 - rewrite fdisjoint_sym.
   apply/fdisjointP=> u.
   by rewrite deab !inE=> /orP [] /eqP ->; apply/negP => ad;
      [move/bigfcupP: aS | move/bigfcupP: bS];
-     apply; exists `d(x) => //; rewrite in_imfset.
+     apply; exists (`d x) => //; rewrite in_imfset.
 - by move/matchingP: SmG; apply.
 Qed.
 
-Lemma nmatch_complete G : is_complete_graph G -> nmatch G = #| `V(G) | ./2.
+Lemma nmatch_complete G : is_complete_graph G -> nmatch G = #| `V G | ./2.
 Proof.
 move/maximal_matching_complete=> H.
 rewrite -nmaxmatchE.

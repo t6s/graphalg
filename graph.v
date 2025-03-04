@@ -11,9 +11,9 @@ Unset Printing Implicit Defensive.
 
 Import Order.Theory.
 
-Reserved Notation "`V G" (at level 0, format "`V G").
-Reserved Notation "`E G" (at level 0, format "`E G").
-Reserved Notation "`d x" (at level 0, format "`d x").
+Reserved Notation "`V" (at level 0, format "`V").
+Reserved Notation "`E" (at level 0, format "`E").
+Reserved Notation "`d" (at level 0, format "`d").
 
 (*
 HB.mixin Record isEnumerableMonad (M : UU0 -> UU0) of Monad M := {
@@ -31,7 +31,7 @@ Record t := mk {
 End def.
 Module Exports.
 Notation ugraph := t.
-(*Notation "`d x" := (boundary x).*)
+(*Notation "`d" := (boundary).*)
 End Exports.
 End MonadicGraph.
 *)
@@ -49,7 +49,7 @@ Record t := mk {
 End def.
 Module Exports.
 Notation ugraph := t.
-(*Notation "`d x" := (boundary x).*)
+(*Notation "`d" := (boundary).*)
 End Exports.
 End UndirectedGraph.
 
@@ -66,9 +66,9 @@ End def.
 Module Exports.
 Notation llugraph := t.
 (*Coercion boundary : t >-> finset_of.*)
-Notation "`d x" := (boundary x).
-Notation "`E x" := (E x).
-Notation "`V x" := (V x).
+Notation "`d" := boundary.
+Notation "`E" := E.
+Notation "`V" := V.
 End Exports.
 End LooplessUndirectedGraph.
 Export LooplessUndirectedGraph.Exports.
@@ -78,29 +78,29 @@ Local Open Scope fset_scope.
 
 Section llugraph_lemmas.
 
-Lemma boundary_card2 G : forall e : `E(G) , #|` `d e| = 2.
+Lemma boundary_card2 G : forall e : `E G , #|` `d e| = 2.
 Proof. by case: G. Qed.
 
-Lemma boundary_exists G (e : `E(G)) : exists v : `V(G), v \in `d(e).
+Lemma boundary_exists G (e : `E G) : exists v : `V G, v \in `d e.
 Proof.
 have: 0 < #|` `d(e) | by rewrite boundary_card2.
 rewrite cardfs_gt0.
 by move/fset0Pn.
 Qed.
 
-Lemma boundary_exists2 G (e : `E(G)) :
-  exists u v, u \in `d(e) /\ v \in `d(e) /\ u != v.
+Lemma boundary_exists2 G (e : `E G) :
+  exists u v, u \in `d e /\ v \in `d e /\ u != v.
 Proof.
 move/eqP/cardfs2P: (boundary_card2 e) => [x [y [xy dexy]]].
 by exists x, y; rewrite xy dexy; split; [| split => //];
    rewrite inE !in_fset1 eqxx ?orbT ?orTb.
 Qed.
 
-Lemma boundary_sig2 G (e : `E(G)) :
-  {uv | uv.1 != uv.2 /\ `d(e) = [fset uv.1; uv.2]}.
+Lemma boundary_sig2 G (e : `E G) :
+  {uv | uv.1 != uv.2 /\ `d e = [fset uv.1; uv.2]}.
 Proof. exact/cardfs2_sig/boundary_card2. Qed.
 
-Lemma boundary_disj_neq G (e f : `E(G)) : [disjoint `d(e) & `d(f)] -> e != f.
+Lemma boundary_disj_neq G (e f : `E G) : [disjoint `d e & `d f] -> e != f.
 Proof.
 apply:contraTN => /eqP ->.
 by rewrite /fdisjoint fsetIid -cardfs_eq0 boundary_card2.
@@ -113,7 +113,7 @@ Section matching.
 Variable G : llugraph.
 
 Section pred.
-Variable S : {fset `E(G)}.
+Variable S : {fset `E G}.
 
 (*
 Definition classical_matching : set (set G%:E) :=
@@ -124,7 +124,7 @@ Definition is_matching :=
   [forall e in S,
       [forall f in S,
           (e != f)
-            ==> [disjoint `d(e) & `d(f)]%fset]].
+            ==> [disjoint `d e & `d f]%fset]].
 
 Lemma is_matchingP :
   reflect
@@ -143,10 +143,10 @@ Qed.
 Definition inj_boundary :=
   {in S & S, injective (@LooplessUndirectedGraph.boundary G)}.
 
-Definition trivIbound := trivIfset [fset `d(x) | x in S].
+Definition trivIbound := trivIfset [fset `d x | x in S].
 
 Lemma is_matching_cardP : 
-  is_matching <-> {in S & S, forall e f, e != f -> #|` `d(e) `&` `d(f) | = 0}.
+  is_matching <-> {in S & S, forall e f, e != f -> #|` `d e `&` `d f | = 0}.
 Proof.
 split.
   move /is_matchingP.  
@@ -166,26 +166,26 @@ Qed.
 
 Lemma inj_boundary_cardP :
   inj_boundary <->
-    {in S & S, forall e f, e != f -> #|` `d(e) `&` `d(f) | <= 1}.
+    {in S & S, forall e f, e != f -> #|` `d e `&` `d f | <= 1}.
 Proof.
 split; last first.
   move=> + e f eS fS dedf => /(_ e f eS fS).
   have[] := eqVneq e f=> // _ /(_ erefl).
   by rewrite dedf fsetIid boundary_card2.
 move=> + e f eS fS => /(_ e f eS fS).
-have[]:= eqVneq `d(e) `d(f); first by move=> -> /(_ erefl) ->; rewrite eqxx.
+have[]:= eqVneq (`d e) (`d f); first by move=> -> /(_ erefl) ->; rewrite eqxx.
 move=> dedf ? ef.
 rewrite leqNgt; apply/negP=> H.
 (**)
 have:= H; apply/negP; rewrite -ltnNge.
-have:= fsubsetIl `d(e) `d(f) => /fsubset_leqif_cards.
+have:= fsubsetIl (`d e) (`d f) => /fsubset_leqif_cards.
 rewrite boundary_card2=> /ltn_leqif ->.
 rewrite eqEfsubset fsubsetIl /= fsubsetIidl.
 apply/negP=> H0.
 (**)
 have:= H; apply/negP; rewrite -ltnNge.
-have:= fsubsetIl `d(f) `d(e) => /fsubset_leqif_cards.
-rewrite (fsetIC `d(f)) (boundary_card2 f)=> /ltn_leqif ->.
+have:= fsubsetIl (`d f) (`d e) => /fsubset_leqif_cards.
+rewrite (fsetIC (`d f)) (boundary_card2 f)=> /ltn_leqif ->.
 rewrite eqEfsubset fsubsetIr /= fsubsetIidr.
 apply/negP=> H1.
 (**)
@@ -194,18 +194,18 @@ by rewrite eqEfsubset H0 H1.
 Qed.
 
 Lemma trivIbound_cardP :
-  trivIbound <-> {in S & S, forall e f : `E(G), #|` `d(e) `&` `d(f)| \in [fset 0; 2]}.
+  trivIbound <-> {in S & S, forall e f : `E G, #|` `d e `&` `d f| \in [fset 0; 2]}.
 Proof.
 split.
   move/trivIfsetP=> H e f eS fS; rewrite !inE.
-  have:= H `d(e) `d(f) => /[!in_imfset] // /(_ erefl erefl).
-  have [-> _ | dedf /(_ erefl) ] := eqVneq `d(e) `d(f).
+  have:= H (`d e) (`d f) => /[!in_imfset] // /(_ erefl erefl).
+  have [-> _ | dedf /(_ erefl) ] := eqVneq (`d e) (`d f).
     by rewrite fsetIid boundary_card2 orbT.
   by move/eqP->; rewrite cardfs0 eqxx.
 move=> H; apply/trivIfsetP=> A B /imfsetP [] e /= eS -> /imfsetP [] f /= fS -> dedf.
 rewrite -fsetI_eq0 -cardfs_eq0.
 have:= H e f eS fS; rewrite !inE=> /orP [] // /eqP dedf0.
-have:= cardfsD `d(e) `d(f).
+have:= cardfsD (`d e) (`d f).
 rewrite boundary_card2 dedf0 subnn => /eqP.
 rewrite cardfs_eq0 fsetD_eq0.
 rewrite -[X in is_true X -> _]andTb -dedf -fproperEneq.
@@ -213,7 +213,7 @@ move/fproper_ltn_card.
 by rewrite !boundary_card2.
 Qed.
 
-Lemma matching_inj_boundary : is_matching -> inj_boundary.
+Lemma is_matching_inj_boundary : is_matching -> inj_boundary.
 Proof.
 move=> MmG e1 e2 e1M e2M.
 move/is_matchingP: MmG => /(_ e1 e2 e1M e2M).
@@ -222,7 +222,7 @@ apply.
 by rewrite /fdisjoint d12 fsetIid -cardfs_eq0 boundary_card2.
 Qed.
 
-Lemma matching_trivIbound : is_matching -> trivIbound.
+Lemma is_matching_trivIbound : is_matching -> trivIbound.
 Proof.
 move/is_matchingP => H.
 apply/trivIfsetP => a b.
@@ -239,7 +239,7 @@ Lemma is_matching_triv_inj :
 Proof.
 split; last first.
   move=> ?.
-  by split; [apply: matching_inj_boundary | apply: matching_trivIbound].
+  by split; [apply: is_matching_inj_boundary | apply: is_matching_trivIbound].
 case.
 move=> bi.
 move/trivIfsetP=> ibt.
@@ -252,13 +252,23 @@ exact/eqP/bi.
 Qed.
 End pred.
 
-Definition matching : {fset {fset `E(G)}} :=
-  [fset S : {fset `E(G)} | is_matching S].
+Definition matching : {fset {fset `E G}} :=
+  [fset S : {fset `E G} | is_matching S].
 
 Definition nmatch := \max_(S in matching) #|` S |.
 
-Lemma leq_nmatch (S : {fset `E(G)}) : S \in matching -> #|` S | <= nmatch.
+Lemma leq_nmatch (S : {fset `E G}) : S \in matching -> #|` S | <= nmatch.
 Proof. by move=> mG; apply:leq_bigmax_cond. Qed.
+
+Lemma matching_inj_boundary M : M \in matching -> inj_boundary M.
+Proof. rewrite !inE; exact: is_matching_inj_boundary. Qed.
+
+Lemma matching_trivIbound M : M \in matching -> trivIbound M.
+Proof. rewrite !inE; exact: is_matching_trivIbound. Qed.
+
+Lemma matching_triv_inj M :
+  inj_boundary M /\ trivIbound M <-> M \in matching.
+Proof. rewrite !inE; exact: is_matching_triv_inj. Qed.
 
 End matching.
 
@@ -272,9 +282,9 @@ Proof. by rewrite cardfsT card_ord. Qed.
 Definition G := LooplessUndirectedGraph.mk axiom.
 
 Example trivIbound_is_not_necessarily_matching :
-  exists S : {fset `E(G)}, trivIbound S /\ ~ @is_matching G S.
+  exists S : {fset `E G}, trivIbound S /\ ~ @is_matching G S.
 Proof.
-exists (fsetT `E(G)); split.
+exists (fsetT (`E G)); split.
   apply/trivIfsetP => A B /imfsetP [] e /= ? -> /imfsetP [] f /= ? ->.
   by rewrite /d eqxx.
 move/is_matchingP.
@@ -303,9 +313,9 @@ Proof. by rewrite /d; case: ifP => _; rewrite cardfs2. Qed.
 Definition G := LooplessUndirectedGraph.mk axiom.
 
 Example inj_boundary_is_not_necessarily_matching :
-  exists S : {fset `E(G)}, inj_boundary S /\ ~ @is_matching G S.
+  exists S : {fset `E G}, inj_boundary S /\ ~ @is_matching G S.
 Proof.
-exists (fsetT `E(G)); split.
+exists (fsetT (`E G)); split.
   move => e f _ _ /=.
   rewrite /d.
   by case: ifPn; case: ifPn => /=; rewrite ?ord2_neq0;
@@ -317,7 +327,7 @@ End matching_inj_boundary_counter_example.
 
 Section matching_lemmas.
 
-Lemma matchingP G (S : {fset `E(G)})  :
+Lemma matchingP G (S : {fset `E G})  :
   reflect
     {in S & S, forall e f, e != f -> [disjoint (`d e) & (`d f)]}
     (S \in matching G).
@@ -329,7 +339,7 @@ Qed.
 Lemma fset0_matching G : fset0 \in matching G.
 Proof. by apply/matchingP => ?; rewrite inE. Qed.
 
-Lemma fset1_matching G (e : `E(G)) : [fset e] \in matching G.
+Lemma fset1_matching G (e : `E G) : [fset e] \in matching G.
 Proof.
 by apply/matchingP => ? ?; rewrite !in_fset1 => /eqP -> /eqP ->; rewrite eqxx.
 Qed.
@@ -354,7 +364,7 @@ by apply/fsubsetP => ? ?; rewrite inE.
 Qed.
 
 Lemma matching1Pn G :
-  reflect (exists e, e \in `E(G)) (matching G != [fset fset0]).
+  reflect (exists e, e \in `E G) (matching G != [fset fset0]).
 Proof.
 apply:(iffP idP).
   move=> H; apply/existsP; move: H; apply:contraNT; move/existsPn => G0.
@@ -372,7 +382,7 @@ by rewrite in_fset1.
 Qed.
 
 Lemma matching1_negb_exists G :
-  matching G == [fset fset0] = ~~ [exists e, e \in `E(G)].
+  matching G == [fset fset0] = ~~ [exists e, e \in `E G].
 Proof.
 apply/idP/idP.
   move=> ?.
@@ -381,7 +391,7 @@ by move/existsP/matching1Pn.
 Qed.
 
 Lemma exists_nmatch (G : llugraph) :
-  { M : {fset `E(G)} | M \in matching G & nmatch G = #|` M| }.
+  { M : {fset `E G} | M \in matching G & nmatch G = #|` M| }.
 Proof.
 apply: eq_bigmax_cond.
 apply/card_gt0P.
@@ -389,7 +399,7 @@ exists fset0.
 exact: fset0_matching.
 Qed.
 
-Lemma nmatch0 (G : llugraph) : #| `E(G) | = 0 -> nmatch G = 0.
+Lemma nmatch0 (G : llugraph) : #| `E G | = 0 -> nmatch G = 0.
 Proof.
 move=> E0.
 case: (exists_nmatch G) => M _ ->.
@@ -399,9 +409,19 @@ rewrite leqn0 cardfsT.
 by apply/eqP.
 Qed.
 
-Lemma matchingU1 (G : llugraph) (M : {fset `E(G)}) (e : `E(G)) :
+Lemma nmatch_eq0 (G : llugraph) : (nmatch G == 0) = (#| `E G | == 0).
+Proof.
+apply/idP/idP; last by move/eqP/nmatch0->.
+apply: contraTT.
+rewrite -!leqn0 -!ltnNge=> /card_gt0P [] e ?.
+have ? := fset1_matching e.
+have->: 1 = size [fset e] by rewrite cardfs1.
+exact: leq_bigmax_cond.
+Qed.
+
+Lemma matchingU1 (G : llugraph) (M : {fset `E G}) (e : `E G) :
   M \in matching G ->
-  (forall f, f \in M -> [disjoint `d(e) & `d(f)]) ->
+  (forall f, f \in M -> [disjoint `d e & `d f]) ->
   (e |` M) \in matching G.
 Proof.
 move=> MmG edisjM.
@@ -421,22 +441,22 @@ Section get1_boundary.
 Variable G : llugraph.
 
 (*
-Let get1_boundary_ (G : llugraph) :  `E(G) -> `V(G).
+Let get1_boundary_ (G : llugraph) :  `E G -> `V G.
 move=> e.
 move: (boundary_exists e).
 by case/boolp.cid => v.
 Defined.
 Definition get1_boundary := Eval hnf in get1boundary_.
 *)
-Definition get1_boundary (e : `E(G)) :=
+Definition get1_boundary (e : `E G) :=
   sval (boolp.cid (boundary_exists e)).
 
 Local Notation tau := get1_boundary.
 
-Lemma get1_in_boundary e : get1_boundary e \in `d(e).
+Lemma get1_in_boundary e : get1_boundary e \in `d e.
 Proof. by rewrite /tau; case: boolp.cid => x. Qed.
 
-Lemma get1_boundary_inj (M : {fset `E(G)}) :
+Lemma get1_boundary_inj (M : {fset `E G}) :
   M \in matching G -> {in M & M, injective tau}.
 Proof.
 move => /matchingP MiG e0 e1 e0M e1M /eqP H.
@@ -454,7 +474,7 @@ Section induced_matching.
 Variable G : llugraph.
 
 Section pred.
-Variable S : {fset `E(G)}.
+Variable S : {fset `E G}.
 
 Definition is_induced_matching :=
   [forall e in S,
@@ -462,13 +482,13 @@ Definition is_induced_matching :=
       (e != f)
         ==>
         [forall g,
-            [disjoint `d(e) & `d(g)]%fset || [disjoint `d(f) & `d(g)]%fset]]].
+            [disjoint `d e & `d g]%fset || [disjoint `d f & `d g]%fset]]].
 
 Lemma is_induced_matchingP :
   reflect
     {in S & S, forall e f,
           e != f ->
-          forall g, [disjoint `d(e) & `d(g)] \/ [disjoint `d(f) & `d(g)]}
+          forall g, [disjoint `d e & `d g] \/ [disjoint `d f & `d g]}
     is_induced_matching.
 Proof.
 apply: (iffP idP) => H.
@@ -486,12 +506,12 @@ Qed.
 
 End pred.
 
-Definition induced_matching : {fset {fset `E(G)}} :=
-  [fset S : {fset `E(G)} | is_induced_matching S].
+Definition induced_matching : {fset {fset `E G}} :=
+  [fset S : {fset `E G} | is_induced_matching S].
 
 Definition nindmatch := \max_(S in induced_matching) #|` S |.
 
-Lemma leq_nindmatch (S : {fset `E(G)}) :
+Lemma leq_nindmatch (S : {fset `E G}) :
   S \in induced_matching -> #|` S | <= nindmatch.
 Proof. by move=> mG; apply:leq_bigmax_cond. Qed.
 
@@ -499,20 +519,20 @@ End induced_matching.
 
 Section induced_matching_lemmas.
 
-Lemma induced_matchingP G (S : {fset `E(G)})  :
+Lemma induced_matchingP G (S : {fset `E G})  :
   reflect
     {in S & S, forall e f,
           e != f ->
-          forall g, [disjoint `d(e) & `d(g)] \/ [disjoint `d(f) & `d(g)]}
+          forall g, [disjoint `d e & `d g] \/ [disjoint `d f & `d g]}
     (S \in induced_matching G).
 Proof.
 rewrite !inE andTb.
 exact: is_induced_matchingP.
 Qed.
 
-Lemma induced_sub_matching G : induced_matching G `<=` matching G.
+Lemma induced_sub_matching G : {subset induced_matching G <= matching G}.
 Proof.
-apply/fsubsetP => S /induced_matchingP imS.
+move=> S /induced_matchingP imS.
 apply/matchingP => e f eS fS ef.
 move: (imS e f eS fS ef) => /(_ f) [] //.
 case: (boundary_exists f) => x xf.
@@ -522,7 +542,7 @@ Qed.
 Lemma fset0_induced_matching G : fset0 \in induced_matching G.
 Proof. by apply/induced_matchingP => ?; rewrite inE. Qed.
 
-Lemma fset1_induced_matching G (e : `E(G)) : [fset e] \in induced_matching G.
+Lemma fset1_induced_matching G (e : `E G) : [fset e] \in induced_matching G.
 Proof.
 by apply/induced_matchingP => ? ?;
    rewrite !in_fset1 => /eqP -> /eqP ->; rewrite eqxx.
@@ -542,7 +562,7 @@ by move/fset1P <-.
 Qed.
 
 Lemma induced_matching1Pn G :
-  reflect (exists e, e \in `E(G)) (induced_matching G != [fset fset0]).
+  reflect (exists e, e \in `E G) (induced_matching G != [fset fset0]).
 Proof.
 apply:(iffP idP).
   move=> H; apply/existsP; move: H; apply:contraNT; move/existsPn => G0.
@@ -560,7 +580,7 @@ by rewrite in_fset1.
 Qed.
 
 Lemma induced_matching1_negb_exists G :
-  induced_matching G == [fset fset0] = ~~ [exists e, e \in `E(G)].
+  induced_matching G == [fset fset0] = ~~ [exists e, e \in `E G].
 Proof.
 apply/idP/idP.
   move=> ?.
@@ -569,7 +589,7 @@ by move/existsP/induced_matching1Pn.
 Qed.
 
 Lemma exists_nindmatch (G : llugraph) :
-  { M : {fset `E(G)} | M \in induced_matching G & nindmatch G = #|` M| }.
+  { M : {fset `E G} | M \in induced_matching G & nindmatch G = #|` M| }.
 Proof.
 apply: eq_bigmax_cond.
 apply/card_gt0P.
@@ -577,15 +597,25 @@ exists fset0.
 exact: fset0_induced_matching.
 Qed.
 
-Lemma nindmatch0 (G : llugraph) : #| `E(G) | = 0 -> nindmatch G = 0.
+Lemma nindmatch0 (G : llugraph) : #| `E G | = 0 -> nindmatch G = 0.
 Proof.
 move=> E0.
 case: (exists_nindmatch G) => M.
-move/(fsubsetP (induced_sub_matching G)).
+move/induced_sub_matching.
 move: E0.
 move/eq_leq; rewrite leqNgt => /card_gt0P.
 move /matching1Pn /eqP ->.
 by rewrite inE => /eqP -> ->.
+Qed.
+
+Lemma nindmatch_eq0 (G : llugraph) : (nindmatch G == 0) = (#| `E G | == 0).
+Proof.
+apply/idP/idP; last by move/eqP/nindmatch0->.
+apply: contraTT.
+rewrite -!leqn0 -!ltnNge=> /card_gt0P [] e ?.
+have ? := fset1_induced_matching e.
+have->: 1 = size [fset e] by rewrite cardfs1.
+exact: leq_bigmax_cond.
 Qed.
 
 End induced_matching_lemmas.
@@ -594,16 +624,16 @@ Section minimal_matching.
 Variable G : llugraph.
 
 Section pred.
-Variable S : {fset `E(G)}.
+Variable S : {fset `E G}.
 
 Definition is_maximal_matching :=
   (S \in matching G) &&
-  [forall T : {fset `E(G)}, (S `<` T) ==> (T \notin matching G)].
+  [forall T : {fset `E G}, (S `<` T) ==> (T \notin matching G)].
 
 Lemma is_maximal_matchingP :
   reflect
     (S \in matching G /\
-     forall T : {fset `E(G)}, (S `<` T) -> (T \notin matching G))
+     forall T : {fset `E G}, (S `<` T) -> (T \notin matching G))
     is_maximal_matching.
 Proof.
 apply: (iffP idP).
@@ -619,13 +649,13 @@ Qed.
 
 End pred.
 
-Definition maximal_matching : {fset {fset `E(G)}} :=
-  [fset S : {fset `E(G)} | is_maximal_matching S].
+Definition maximal_matching : {fset {fset `E G}} :=
+  [fset S : {fset `E G} | is_maximal_matching S].
 
 Definition nmaxmatch := \max_(S in maximal_matching) #|` S |.
 
 Definition nminmatch :=
-  (* if #| `E(G) | == 0 then 0 else *)
+  (* if #| `E G | == 0 then 0 else *)
   \big[Order.min/nmaxmatch]_(S in maximal_matching) #|` S |.
 
 Lemma nminmatch_foldrE :
@@ -640,7 +670,7 @@ move=> S.
 by rewrite mem_filter mem_index_enum andbT.
 Qed.
 
-Lemma geq_nminmatch (S : {fset `E(G)}) :
+Lemma geq_nminmatch (S : {fset `E G}) :
   S \in maximal_matching -> nminmatch <= #|` S |.
 Proof. by move=> mG; rewrite /nminmatch -leEnat; apply: bigmin_le_cond. Qed.
 
@@ -648,10 +678,10 @@ End minimal_matching.
 
 Section maximal_matching_lemmas.
 
-Lemma maximal_matchingP G (S : {fset `E(G)})  :
+Lemma maximal_matchingP G (S : {fset `E G})  :
   reflect
     (S \in matching G /\
-     forall T : {fset `E(G)}, (S `<` T) -> (T \notin matching G))
+     forall T : {fset `E G}, (S `<` T) -> (T \notin matching G))
     (S \in maximal_matching G).
 Proof.
 set P := (P in reflect P _).
@@ -659,13 +689,13 @@ rewrite !inE andTb.
 exact: is_maximal_matchingP.
 Qed.
 
-Lemma ubound_maximal_matching G (S : {fset `E(G)}) : 
+Lemma ubound_maximal_matching G (S : {fset `E G}) : 
   S \in matching G ->
-  exists T : {fset `E(G)},  S `<=` T  /\  T \in maximal_matching G.
+  exists T : {fset `E G},  S `<=` T  /\  T \in maximal_matching G.
 Proof.
 move=> SmG.
 set T : Type := matching G.
-pose R : T -> T -> Prop := (fun x y => @fsubset `E(G) (val x) (val y)).
+pose R : T -> T -> Prop := (fun x y => @fsubset (`E G) (val x) (val y)).
 have R_refl : forall t, R t t by move=> ?; exact: fsubset_refl.
 have R_trans : forall r s t, R r s -> R s t -> R r t
     by move=> ? ? ?; exact: fsubset_trans.
@@ -696,7 +726,7 @@ move: (Hmax [` UmG] (fproper_sub maxU)) (maxU) => <- /=.
 exact /negP /fproper_irrefl.
 Qed.
 
-Lemma leq_nmaxmatch G (S : {fset `E(G)}) :
+Lemma leq_nmaxmatch G (S : {fset `E G}) :
   S \in matching G -> #|` S | <= nmaxmatch G.
 Proof.
 move=> SmG.
@@ -715,12 +745,12 @@ Qed.
 Lemma maximal_sub_matching G : maximal_matching G `<=` matching G.
 Proof. by apply/fsubsetP => S /maximal_matchingP []. Qed.
 
-Lemma in_maximal_matchingW G (S : {fset `E(G)}) :
+Lemma in_maximal_matchingW G (S : {fset `E G}) :
   S \in maximal_matching G -> S \in matching G.
 Proof. by have /fsubsetP/(_ S) := maximal_sub_matching G. Qed.
 
 Lemma maximal_matching1Pn G :
-  reflect (exists e, e \in `E(G)) (maximal_matching G != [fset fset0]).
+  reflect (exists e, e \in `E G) (maximal_matching G != [fset fset0]).
 Proof.
 rewrite [X in reflect _ X](_ : _ = (matching G != [fset fset0]));
   first exact: matching1Pn.
@@ -738,7 +768,7 @@ by rewrite eqxx.
 Qed.
 
 Lemma maximal_matching1_negb_exists G :
-  maximal_matching G == [fset fset0] = ~~ [exists e, e \in `E(G)].
+  maximal_matching G == [fset fset0] = ~~ [exists e, e \in `E G].
 Proof.
 apply/idP/idP.
   move=> ?.
@@ -747,7 +777,7 @@ by move/existsP/maximal_matching1Pn.
 Qed.
 
 Lemma exists_nmaxmatch (G : llugraph) :
-  { M : {fset `E(G)} | M \in maximal_matching G & nmaxmatch G = #|` M| }.
+  { M : {fset `E G} | M \in maximal_matching G & nmaxmatch G = #|` M| }.
 Proof.
 case/fset0Pn/sigW: (maximal_matching_neq0 G) => S SmG.
 apply: eq_bigmax_cond.
@@ -756,7 +786,7 @@ by exists S.
 Qed.
 
 Lemma exists_nminmatch (G : llugraph) :
-  { M : {fset `E(G)} | M \in maximal_matching G & nminmatch G = #|` M| }.
+  { M : {fset `E G} | M \in maximal_matching G & nminmatch G = #|` M| }.
 Proof.
 case/fset0Pn/sigW: (maximal_matching_neq0 G) => S SmG.
 apply: (eq_bigmin S) => //.
@@ -765,7 +795,7 @@ rewrite /nmaxmatch leEnat.
 by apply:leq_bigmax_cond.
 Qed.
 
-Lemma nmaxmatch0 (G : llugraph) : #| `E(G) | = 0 -> nmaxmatch G = 0.
+Lemma nmaxmatch0 (G : llugraph) : #| `E G | = 0 -> nmaxmatch G = 0.
 Proof.
 move=> E0.
 case: (exists_nmaxmatch G) => M.
@@ -776,7 +806,7 @@ move /matching1Pn /eqP ->.
 by rewrite inE => /eqP -> ->.
 Qed.
 
-Lemma nminmatch0 (G : llugraph) : #| `E(G) | = 0 -> nminmatch G = 0.
+Lemma nminmatch0 (G : llugraph) : #| `E G | = 0 -> nminmatch G = 0.
 Proof.
 move=> E0.
 case: (exists_nminmatch G) => M.
@@ -787,9 +817,9 @@ move /matching1Pn /eqP ->.
 by rewrite inE => /eqP -> ->.
 Qed.
 
-Lemma maxmatch_edgeI (G : llugraph) (M : {fset `E(G)}) (e : `E(G)) :
+Lemma maxmatch_edgeI (G : llugraph) (M : {fset `E G}) (e : `E G) :
   M \in maximal_matching G ->
-  exists f, f \in M /\ ~ [disjoint `d(e) & `d(f)]%fset.
+  exists f, f \in M /\ ~ [disjoint `d e & `d f]%fset.
 Proof.
 case/boolP: (e \in M).
   move=> *; exists e; split => //.
@@ -799,7 +829,7 @@ move=> eM.
 case/maximal_matchingP => MmG.
 move/(_ (e |` M)) /(_ (fproperU1 eM)).
 apply:boolp.contraPP=> /boolp.forallNP.
-under (@boolp.eq_forall `E(G)) do rewrite not_andE contrapE -implyE.
+under (@boolp.eq_forall (`E G)) do rewrite not_andE contrapE -implyE.
 by move/(matchingU1 MmG) ->.
 Qed.
 
@@ -808,13 +838,13 @@ End maximal_matching_lemmas.
 (*
 (* not sure if this section is useful *)
 Section span.
-Variables (G : llugraph) (S : {fset `E(G)}).
+Variables (G : llugraph) (S : {fset `E G}).
 
-Definition span_V := fcover [fset `d(e) | e in S].
+Definition span_V := fcover [fset `d e | e in S].
 
 Definition span_E := (fset_sub_finType S) : finType.
 
-Definition span_boundary (e : span_E) := `d(fsval e).
+Definition span_boundary (e : span_E) := `d (fsval e).
 
 Lemma span_boundary_card2 (e : span_E) :  #|` span_boundary e| = 2.
 Proof. exact: boundary_card2. Qed.
@@ -829,29 +859,29 @@ End span.
 Section VofESet.
 
 (* TODO: rename *)
-Definition VofESet G (S : {fset `E(G)}) := fcover [fset `d(e) | e in S].
+Definition VofESet G (S : {fset `E G}) := fcover [fset `d e | e in S].
 
-Lemma VofESetE G (S : {fset `E(G)}) : VofESet S = \bigcup_(e <- S) `d(e).
-Proof. by rewrite -(bigfcup_image _ (fun e => `d(e)) id). Qed.
+Lemma VofESetE G (S : {fset `E G}) : VofESet S = \bigcup_(e <- S) `d e.
+Proof. by rewrite -(bigfcup_image _ (fun e => `d e) id). Qed.
 
 Section lemmas.
-Variables (G : llugraph) (M : {fset `E(G)}) (MmG : M \in matching G).
+Variables (G : llugraph) (M : {fset `E G}) (MmG : M \in matching G).
 
 Lemma matching_double_card : #|` VofESet M | = #|` M |.*2.
 Proof.
 move: MmG.
 rewrite !inE /= => mM.
-move/matching_trivIbound : (mM).
+move/is_matching_trivIbound : (mM).
 rewrite /trivIbound /trivIfset /= => H.
 rewrite -(eqP H). (* rewritable since the LHS is an fcover *)
-rewrite big_imfset /= ; last exact: matching_inj_boundary.
+rewrite big_imfset /= ; last exact: is_matching_inj_boundary.
 under eq_bigr do rewrite boundary_card2.
 by rewrite big_const_seq.
 Qed.
 
 End lemmas.
 
-Lemma double_nmatch_leq_cardVG G : (nmatch G).*2 <= #| `V(G) |.
+Lemma double_nmatch_leq_cardVG G : (nmatch G).*2 <= #| `V G |.
 Proof.
 have [M H1 H2] := exists_nmatch G.
 apply (@leq_trans #|` VofESet M|); last first.
@@ -864,20 +894,20 @@ End VofESet.
 
 (* TODO: remove duplications with graph.VofESet *)
 Section edgeI.
-(* NB: eqv. to ~~ [disjoint fcover [fset `d(f) | f in S] & `d(e)] *)
-Definition edgeI (G : llugraph) (S : {fset `E(G)}) e :=
-  [exists f, (f \in S) && ~~ [disjoint `d(e) & `d(f)]%fset].
+(* NB: eqv. to ~~ [disjoint fcover [fset `d f | f in S] & `d e] *)
+Definition edgeI (G : llugraph) (S : {fset `E G}) e :=
+  [exists f, (f \in S) && ~~ [disjoint `d e & `d f]%fset].
 
-Lemma edgeIP (G : llugraph) (S : {fset `E(G)}) e :
-  reflect (exists f, f \in S /\ ~ [disjoint `d(e) & `d(f)]%fset) (edgeI S e).
+Lemma edgeIP (G : llugraph) (S : {fset `E G}) e :
+  reflect (exists f, f \in S /\ ~ [disjoint `d e & `d f]%fset) (edgeI S e).
 Proof.
 apply: existsPP=> f.
 apply: andPP; first exact: idP.
 by apply: negP.
 Qed.
 
-Lemma edgeIPn (G : llugraph) (S : {fset `E(G)}) e :
-  reflect (forall f, f \in S -> [disjoint `d(e) & `d(f)]%fset) (~~ edgeI S e).
+Lemma edgeIPn (G : llugraph) (S : {fset `E G}) e :
+  reflect (forall f, f \in S -> [disjoint `d e & `d f]%fset) (~~ edgeI S e).
 Proof.
 apply: (iffP idP).
   rewrite negb_exists=> /forallP H f fS.
@@ -888,9 +918,9 @@ by apply; exact: (H f fS).
 Qed.
 
 (* TODO: rename *)
-Lemma maxmatch_edgeI_opp (G : llugraph) (M : {fset `E(G)}) :
+Lemma maxmatch_edgeI_opp (G : llugraph) (M : {fset `E G}) :
   M \in matching G ->
-  (forall e, exists f, f \in M /\ ~ [disjoint `d(e) & `d(f)]%fset) ->
+  (forall e, exists f, f \in M /\ ~ [disjoint `d e & `d f]%fset) ->
   M \in maximal_matching G.
 Proof.
 move=> MmG H.
@@ -913,7 +943,7 @@ Section matching_number_lemmas.
 
 Lemma nmaxmatchE G : nmaxmatch G = nmatch G.
 Proof.
-case/boolP: [exists e, e \in `E(G)]; last first.
+case/boolP: [exists e, e \in `E G]; last first.
   rewrite /nmaxmatch /nmatch.
   move => /[dup] /existsP /matching1Pn /eqP ->.
   by move => /[dup] /existsP /maximal_matching1Pn /eqP ->.
@@ -928,10 +958,29 @@ apply/anti_leq/andP; split.
   exact: leq_nmaxmatch.
 Qed.
 
-Lemma exists_nmatch_maximal (G : llugraph) :
-  { M : {fset `E(G)} | M \in maximal_matching G & nmatch G = #|` M| }.
+Lemma nmaxmatch_eq0 (G : llugraph) : (nmaxmatch G == 0) = (#| `E G | == 0).
+Proof. by rewrite nmaxmatchE nmatch_eq0. Qed.
+
+Lemma nminmatch_eq0 (G : llugraph) : (nminmatch G == 0) = (#| `E G | == 0).
 Proof.
-suff: { M : {fset `E(G)} | M \in maximal_matching G & nmaxmatch G = #|` M| }.
+apply/idP/idP; last by move/eqP/nminmatch0->.
+apply: contraTT.
+move/[dup].
+rewrite -{1}leqn0 -ltnNge => /card_gt0P [] e ?.
+rewrite -nmaxmatch_eq0 -!leqn0 -!ltnNge => nmm0.
+rewrite /nminmatch -big_filter big_seq/= -leEnat.
+apply: le_bigmin=> // X.
+rewrite mem_filter mem_index_enum andbT => /maximal_matchingP [] Xm Xmax.
+rewrite leEnat leqNgt ltnS leqn0 cardfs_eq0.
+apply/eqP; move: Xmax=> /[swap] -> /(_ [fset e]) /(_ _) /negP.
+apply; last exact: fset1_matching.
+by rewrite fproper0; apply/fset0Pn; exists e; rewrite inE.
+Qed.
+
+Lemma exists_nmatch_maximal (G : llugraph) :
+  { M : {fset `E G} | M \in maximal_matching G & nmatch G = #|` M| }.
+Proof.
+suff: { M : {fset `E G} | M \in maximal_matching G & nmaxmatch G = #|` M| }.
   case => S SmmG nmmGE.
   exists S => //.
   by rewrite -nmmGE nmaxmatchE.
@@ -950,9 +999,9 @@ Section nmatch_leq_double_nminmatch.
 Variable G : llugraph.
 
 (* TODO: avoid using AC or move onto classical_sets *)
-Lemma maxmatch_edgeI' (M : {fset `E(G)}) (e : `E(G)):
+Lemma maxmatch_edgeI' (M : {fset `E G}) (e : `E G):
   M \in maximal_matching G -> 
-  exists f : `E(G), f \in M /\ exists v : `V(G), v \in `d(e) /\ v\in `d(f).
+  exists f : `E G, f \in M /\ exists v : `V G, v \in `d e /\ v \in `d f.
 Proof.
 case/(maxmatch_edgeI e) => f [] fM.
 case/negP/fset0Pn => v /[!inE] /andP [] vde vdf.
@@ -960,8 +1009,8 @@ exists f; split => //.
 by exists v; split.
 Qed.
 
-Let phi_ (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) :
-  `E(G) -> `E(G) * `V(G).
+Let phi_ (M : {fset `E G}) (Mmax : M \in maximal_matching G) :
+  `E G -> `E G * `V G.
 move=> e.
 move: (maxmatch_edgeI' e Mmax).
 case/boolp.cid => f [] _.
@@ -971,7 +1020,7 @@ Defined.
 
 Let phi := Eval hnf in phi_.
 
-Let phi_VofESet (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) e :
+Let phi_VofESet (M : {fset `E G}) (Mmax : M \in maximal_matching G) e :
   (phi Mmax e).2 \in VofESet M.
 Proof.
 rewrite VofESetE.
@@ -985,7 +1034,7 @@ exists f => //.
 by rewrite andbT.
 Qed.
 
-Let phi_boundary (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) e :
+Let phi_boundary (M : {fset `E G}) (Mmax : M \in maximal_matching G) e :
   (phi Mmax e).2 \in `d e.
 Proof.
 rewrite /phi.
@@ -995,7 +1044,7 @@ case: boolp.cid.
 by move=> ? [].
 Qed.
 
-Let phi_boundary_self (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) e :
+Let phi_boundary_self (M : {fset `E G}) (Mmax : M \in maximal_matching G) e :
   (phi Mmax e).2 \in `d ((phi Mmax e).1).
 Proof.
 rewrite /phi.
@@ -1005,8 +1054,8 @@ case: boolp.cid.
 by move=> ? [].
 Qed.
 
-Let phi_inj (M : {fset `E(G)}) (Mmax : M \in maximal_matching G)
-    (N : {fset `E(G)}) e0 e1 :
+Let phi_inj (M : {fset `E G}) (Mmax : M \in maximal_matching G)
+    (N : {fset `E G}) e0 e1 :
   N \in matching G -> e0 \in N -> e1 \in N ->
   (phi Mmax e0).2 == (phi Mmax e1).2 -> e0 == e1.
 Proof.
@@ -1049,16 +1098,16 @@ QED
 
 Section nindmatch_leq_nminmatch.
 
-Let psi (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) e :=
+Let psi (M : {fset `E G}) (Mmax : M \in maximal_matching G) e :=
       (phi Mmax e).1.
 
-Let psi_E (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) e :
-  psi Mmax e \in `E(G).
+Let psi_E (M : {fset `E G}) (Mmax : M \in maximal_matching G) e :
+  psi Mmax e \in `E G.
 Proof.
 by [].
 Qed.
 
-Let psi_M (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) e :
+Let psi_M (M : {fset `E G}) (Mmax : M \in maximal_matching G) e :
   psi Mmax e \in M. 
 Proof.
 rewrite /psi /phi.
@@ -1066,7 +1115,7 @@ case: boolp.cid => ? [] *.
 by case: boolp.cid.
 Qed.
 
-Lemma psi_inj (M : {fset `E(G)}) (Mmax : M \in maximal_matching G) (N : {fset `E(G)}) e0 e1 :
+Lemma psi_inj (M : {fset `E G}) (Mmax : M \in maximal_matching G) (N : {fset `E G}) e0 e1 :
   N \in induced_matching G -> e0 \in N -> e1 \in N ->
   psi Mmax e0 == psi Mmax e1 -> e0 == e1.
 Proof.
@@ -1105,7 +1154,7 @@ End nindmatch_leq_nminmatch.
 
 End nmatch_leq_double_nminmatch.
 
-Lemma card_matching_leq_nmatch (G : llugraph) (M : {fset `E(G)}) :
+Lemma card_matching_leq_nmatch (G : llugraph) (M : {fset `E G}) :
   (M \in matching G) -> (#|` M | =  nmatch G) -> M \in maximal_matching G.
 Proof.
 move=> MmG.
