@@ -1,6 +1,6 @@
-# A Coq formalization of graph theory and combinatorial commutative algebra
+# A Rocq formalization of graph theory and combinatorial commutative algebra
 
-GraphAlg is a Coq library formalizing graph theory and combinatorial commutative algebra.
+GraphAlg is a Rocq library formalizing graph theory and combinatorial commutative algebra.
 
 - Authors:
   - Takafumi Saikawa, Nagoya University 
