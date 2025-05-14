@@ -287,7 +287,7 @@ rewrite neq_ltn => /orP [] H; apply/maximal_matchingP => -[]; last first.
   move/leq_trans/[apply].
   by rewrite leqNgt H.
 move=> SmG Smax; move: H.
-rewrite geq_half_double -addn1 doubleD {2}doubleE /=.
+rewrite geq_half_double -addn1 doubleD.
 rewrite -matching_double_card //.
 rewrite -leq_psubRL //.
 rewrite -cardfsT -cardfsDS; last by apply/fsubsetP => ?; rewrite inE.
@@ -407,13 +407,6 @@ have xyP: [fset inl x; inr y] \in CompleteBipartiteGraph.E V1 V2.
 by exists [` xyP].
 Qed.            
   
-Lemma inl_inj (T U : Type) : injective (@inl T U).
-Proof. by move=> ? ? ; inversion 1. Qed.
-
-Lemma inr_inj (T U : Type) : injective (@inr T U).
-Proof. by move=> ? ? ; inversion 1. Qed.
-
-
 Lemma card_VK2 (V1 V2 : finType) :
   #| `V (`K2 V1 V2)| = (#| V1| + #| V2|)%N.
 Proof. exact: card_sum. Qed.
@@ -424,8 +417,8 @@ Proof.
 rewrite /`K2 /= /CompleteBipartiteGraph.E /= .
 rewrite -cardfE /=.
 rewrite card_in_imfset /=.
-  rewrite cardfsM /= card_imfset; last exact: inl_inj. 
-  rewrite card_imfset /=; last exact: inr_inj.    
+  rewrite cardfsM /= card_imfset; last by move=> ? ? [].
+  rewrite card_imfset /=; last by move=> ? ? [].
   by rewrite !cardE.
 move=> x y /=.
 rewrite (surjective_pairing x).
@@ -442,17 +435,34 @@ case/andP.
 move/fsubsetP. 
 move/(_ (inl x1)).
 rewrite !inE eqxx /= => /(_ erefl) /orP [] //.
-move/eqP => xy1; have:= inl_inj xy1; clear xy1. (*?*)
+case/eqP.
 move->.
 move=> /fsubsetP.
 move/(_ (inr y2)).
 rewrite !inE eqxx /= => /(_ erefl).
-move/eqP => xy2; have:= inr_inj xy2; clear xy2.
-by move->.
+by case/eqP => ->.
 Qed.
   
-Lemma nindmatch_complete_bipartite G :
-  is_complete_bipartite_graph G -> nindmatch G = 1.   
+(*
+(* TODO: move to graph.v *)
+Lemma nindmatch_eq1P G :
+  reflect
+    (forall S : {fset `E G}, S \in induced_matching G -> #|` S | = 1)
+    (nindmatch G == 1).
+Proof.
+rewrite /nindmatch /=.
+set maxS := eqbLHS.
+pose argmaxS : {fset `E G} :=
+  [arg max_(S > fset0 in induced_matching G) #|` S|].
+have maxSE: maxS = #|` argmaxS|.
+  by rewrite /maxS (bigop.bigmax_eq_arg fset0)// fset0_induced_matching.
+apply: (iffP idP).
+  move=> /eqP max1 (* /[dup] /eq_leq leq1 max1.*) .
+  have:= leq_bigmax
+*)
+
+Lemma nindmatch_complete_bipartite G (e : `E G) :
+  is_complete_bipartite_graph G -> nindmatch G = 1.
 Proof.
 move=> icbg.  
 rewrite /nindmatch /=.
@@ -471,4 +481,4 @@ Lemma nmatch_complete_bipartite (V1 V2 : finType) :
 Proof.
 Abort.
 
-
+End is_complete_bipartite.

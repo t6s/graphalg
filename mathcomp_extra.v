@@ -173,12 +173,6 @@ Lemma fset2_xor [K : choiceType] (x a b : K) :
   a != b -> x \in [fset a; b] = xorb (x == a) (x == b).
 Proof. rewrite !inE; exact: eq_span_xor. Qed.
 
-Lemma inl_inj (T U : Type) : injective (@inl T U).
-Proof. by move=> ? ?; inversion 1. Qed.
-
-Lemma inr_inj (T U : Type) : injective (@inr T U).
-Proof. by move=> ? ?; inversion 1. Qed.
-
 Lemma id2b_andr (a b c : bool) : a && b = c && b -> b -> a = c.
 Proof.
 move=> Habc Hb.
