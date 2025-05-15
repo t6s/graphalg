@@ -335,28 +335,24 @@ End is_complete_graph.
 Module CompleteBipartiteGraph.
 Section def.
 Variables V1 V2 : finType.
-Definition E :=
-  [fset [fset p.1; p.2] |
-    p in [fset inl x | x in V1] `*` [fset inr y | y in V2]].
-(*
-Definition E21 :=
-  [fset [fset p.2; p.1] |
-    p in [fset inl x | x in V1] `*` [fset inr y | y in V2]].
-Definition E := E12 `|` E21. 
-*)
-Definition boundary (e : E) : {fset V1 + V2} := val e.
+Definition V := (V1 + V2)%type.
+Definition E := (V1 * V2)%type.
+Definition boundary (e : E) : {fset V} := [fset inl e.1; inr e.2].
 Lemma axiom (e : E) : #|` boundary e| = 2.  
-Proof.
-case: e => /= e.  
-rewrite /boundary /=.
-move /imfsetP => /= [] [] x y.
-rewrite inE /= => /andP [].
-move /imfsetP => /= [] a ? ->.
-move /imfsetP => /= [] b ? -> ->.
-by rewrite cardfs2.
-Qed.  
+Proof. by case: e => x y; rewrite /boundary /= cardfs2. Qed.
 Definition t := LooplessUndirectedGraph.mk axiom.     
 End def.
+Section lemmas.
+Lemma boundary_inj V1 V2 : injective (@boundary V1 V2).
+Proof.
+rewrite /boundary; case=> a1 b1 [] a2 b2 /fsetP /= H.
+have:= H (inl a2).
+rewrite !inE eqxx /= -/(is_true _) => /orP [/eqP [] -> |]; last discriminate.
+have:= H (inr b2).
+rewrite !inE eqxx orbT -/(is_true _) => /orP [| /eqP [] -> //].
+discriminate.
+Qed.
+End lemmas.
 End CompleteBipartiteGraph.
 
 Notation "`K2"
@@ -380,69 +376,33 @@ Lemma KV1V2_is_complete_bipartite (V1 V2 : finType) :
   is_complete_bipartite_graph (`K2 V1 V2 ).
 Proof.
 rewrite /is_complete_bipartite_graph /=.  
-split; first by move=> *; apply: val_inj.
-exists [fset inl x | x in V1].
-exists [fset inr y | y in V2].
+split; first exact: CompleteBipartiteGraph.boundary_inj.
+exists (inl @` V1), (inr @` V2).
 split.
-  apply/fsetP => /= -[] a. 
-    rewrite !inE /=.  
-    by rewrite in_imfset /=.
-  rewrite !inE /=.
-  by rewrite in_imfset //= orbT.
+  apply/esym/eqP; rewrite eqEfsubset => /=.
+  rewrite fsubsetT/= fsubsetE.
+  by case=> v _; rewrite inE in_imfset// orbT.
 split.
-  apply/disjoint_fsetI0 /fdisjointP.
-  move=> a /imfsetP [] x ? ->. 
-  by apply/imfsetP => -[] y ?.
+  apply/fsetP=> v.
+  rewrite inE; case: imfsetP=> //= -[] x ? ->.
+  case: imfsetP=> //= -[] y ?.
+  discriminate.
 move=> v w.
-have: \val v \in [fset inl x | x in V1].
-  exact:valP.
-move/imfsetP => [] x ? ->.
-have: \val w \in [fset inr y | y in V2].
-  exact:valP.
-move/imfsetP => -[] y ? ->.
-have xyP: [fset inl x; inr y] \in CompleteBipartiteGraph.E V1 V2.
-  apply /imfsetP => /=.
-  exists (inl x, inr y) => //.
-  by rewrite !inE /= !in_imfset /=.
-by exists [` xyP].
+have: \val v \in inl @` V1 by exact: valP.
+case/imfsetP=> x ? ->.
+have: \val w \in inr @` V2 by exact: valP.
+case/imfsetP=> y ? ->.
+by exists (x, y).
 Qed.            
-  
+
 Lemma card_VK2 (V1 V2 : finType) :
   #| `V (`K2 V1 V2)| = (#| V1| + #| V2|)%N.
 Proof. exact: card_sum. Qed.
 
 Lemma card_EK2 (V1 V2 : finType) :
   #| `E (`K2 V1 V2)| = (#| V1| *  #| V2|)%N.
-Proof.
-rewrite /`K2 /= /CompleteBipartiteGraph.E /= .
-rewrite -cardfE /=.
-rewrite card_in_imfset /=.
-  rewrite cardfsM /= card_imfset; last by move=> ? ? [].
-  rewrite card_imfset /=; last by move=> ? ? [].
-  by rewrite !cardE.
-move=> x y /=.
-rewrite (surjective_pairing x).
-rewrite (surjective_pairing y).
-rewrite !inE /= => /andP [] /=.
-move=> /imfsetP [] x1 /= ? ->.
-move=> /imfsetP [] x2 /= ? ->.
-move=> /andP [] /=.
-move=> /imfsetP [] y1 /= ? ->.
-move=> /imfsetP [] y2 /= ? ->.
-move/eqP.
-rewrite eqEfsubset.
-case/andP.
-move/fsubsetP. 
-move/(_ (inl x1)).
-rewrite !inE eqxx /= => /(_ erefl) /orP [] //.
-case/eqP.
-move->.
-move=> /fsubsetP.
-move/(_ (inr y2)).
-rewrite !inE eqxx /= => /(_ erefl).
-by case/eqP => ->.
-Qed.
-  
+Proof. exact: card_prod. Qed.
+
 (*
 (* TODO: move to graph.v *)
 Lemma nindmatch_eq1P G :
