@@ -133,7 +133,7 @@ Section def.
 Variable V : finType.
 Definition E :=
   [fset [fset p.1; p.2] |
-    p in (fsetT V `*` fsetT V) `\` fset_diag (fsetT V)].
+    p in ([fset: V] `*` [fset: V]) `\` fset_diag [fset: V]].
 Definition boundary (e : E) : {fset V} := val e.
 Definition axiom : forall e : E, #|` boundary e| = 2.
 Proof.
@@ -178,7 +178,7 @@ Proof. exact: card_ord. Qed.
 Lemma card_Ecomplete_aux G :
   is_complete_graph G ->
   fcover [fset biboundary e | e in `E G]  =
-    (fsetT (`V G) `*` fsetT (`V G)) `\` fset_diag (fsetT (`V G)).
+    ([fset: `V G] `*` [fset: `V G]) `\` fset_diag [fset: `V G].
 Proof.
 rewrite /is_complete_graph=> -[] d_inj d_surj.
 rewrite /fcover -imfsetT bigfcup_image.
@@ -223,7 +223,7 @@ apply: (@leq_trans (2 * #| `E (`K (`V G)) |)); last first.
   rewrite card_Ecomplete //.
   exact: KT_is_complete.
 rewrite leq_mul2l //=.
-have-> : #| `E G | = #|` [fset `d e | e in fsetT (`E G)] |.
+have-> : #| `E G | = #|` [fset `d e | e in [fset: `E G]] |.
   by rewrite card_imfset //= cardfsT.
 rewrite -cardfE.
 apply/fsubset_leq_card/fsubsetP=> x.
@@ -250,7 +250,7 @@ have-> : (2 <= #| `V G |) = (1 <= #| `E G |).
 apply/leqifP; case: ifPn=> [EGgt0 |]; last first.
   by rewrite -leqNgt leqn0 => /eqP /nindmatch0 ->.
 have: 1 <= nindmatch G by rewrite ltnNge leqn0 nindmatch_eq0 -lt0n.
-rewrite leq_eqVlt=> /orP [/eqP -> // |]. 
+rewrite leq_eqVlt=> /orP [/eqP -> // |].
 have:= exists_nindmatch G => -[] M Mim ->.
 have:= Mim => /induced_matchingP Mim'.
 rewrite cardfE=> /card_gt1P /= [] e1 [] e2 [] ? ? e12.
@@ -338,9 +338,9 @@ Variables V1 V2 : finType.
 Definition V := (V1 + V2)%type.
 Definition E := (V1 * V2)%type.
 Definition boundary (e : E) : {fset V} := [fset inl e.1; inr e.2].
-Lemma axiom (e : E) : #|` boundary e| = 2.  
+Lemma axiom (e : E) : #|` boundary e| = 2.
 Proof. by case: e => x y; rewrite /boundary /= cardfs2. Qed.
-Definition t := LooplessUndirectedGraph.mk axiom.     
+Definition t := LooplessUndirectedGraph.mk axiom.
 End def.
 Section lemmas.
 Lemma boundary_inj V1 V2 : injective (@boundary V1 V2).
@@ -363,19 +363,19 @@ Notation "`K2_ m n"
        (at level 1, format "`K2_ m n").
 
 Section is_complete_bipartite.
-Implicit Type G : llugraph.  
+Implicit Type G : llugraph.
 
 Definition is_complete_bipartite_graph G :=
   injective (fun e : `E G => `d e) /\
     exists V_1 V_2 : {fset `V G},
-      fsetT (`V G) = V_1 `|` V_2 /\ V_1 `&` V_2 = fset0 /\
+      [fset: `V G] = V_1 `|` V_2 /\ V_1 `&` V_2 = fset0 /\
         forall v : V_1, forall w : V_2,
         exists e : `E G, `d e = [fset \val v; \val w].
 
 Lemma KV1V2_is_complete_bipartite (V1 V2 : finType) :
   is_complete_bipartite_graph (`K2 V1 V2 ).
 Proof.
-rewrite /is_complete_bipartite_graph /=.  
+rewrite /is_complete_bipartite_graph /=.
 split; first exact: CompleteBipartiteGraph.boundary_inj.
 exists (inl @` V1), (inr @` V2).
 split.
@@ -393,7 +393,7 @@ case/imfsetP=> x ? ->.
 have: \val w \in inr @` V2 by exact: valP.
 case/imfsetP=> y ? ->.
 by exists (x, y).
-Qed.            
+Qed.
 
 Lemma card_VK2 (V1 V2 : finType) :
   #| `V (`K2 V1 V2)| = (#| V1| + #| V2|)%N.
@@ -424,7 +424,7 @@ apply: (iffP idP).
 Lemma nindmatch_complete_bipartite G (e : `E G) :
   is_complete_bipartite_graph G -> nindmatch G = 1.
 Proof.
-move=> icbg.  
+move=> icbg.
 rewrite /nindmatch /=.
 rewrite /induced_matching /=.
 Abort.

@@ -10,37 +10,21 @@ Unset Printing Implicit Defensive.
 Import Order.Theory.
 
 Local Open Scope fset_scope.
-(*
-Local Open Scope classical_set_scope.
- *)
-
-Lemma eq_cardfs {K : choiceType} (A B : {fset K}) :
-  A = B -> #|` A | = #|` B |.
-Proof. by move->. Qed.
+(* Local Open Scope classical_set_scope. *)
 
 Section neighbourhood.
 Variable G : llugraph.
 
-
 (*
-Definition classical_openNeighbourhood (v : `V G) := [set w | exists e, e \in `E G /\ v \in `d(e) /\ w \in `d(e) ].
+Definition classical_openNeighbourhood (v : `V G) :=
+  [set w | exists e, e \in `E G /\ v \in `d(e) /\ w \in `d(e) ].
 *)
 
 Definition open_neighbourhood (v : `V G) := [fset w : `V G | [exists e, (e \in `E G) && (`d(e) == [fset v; w]) ]].
 
-Definition closed_neighbourhood (v : `V G) := [fset v] `|` open_neighbourhood v.
-(*
-Definition closed_neighbourhood2 (v : `V G) := v |` open_neighbourhood v.
-*)
+Definition closed_neighbourhood (v : `V G) := v |` open_neighbourhood v.
+(* = [fset v] `|` open_neighbourhood v. *)
 
-(*
-Locate "`\`".
-Print closed_neighbourhood.
-Search Order.diff.
-*)
-(*
-Search fsetU fsetD.
-*)
 
 (* If G has a loop, this lemma does not hold. *)
 Lemma open_neighbourhood_not_closed (v : `V G) :
@@ -52,14 +36,12 @@ by rewrite boundary_card2 cardfs1.
 Qed.
 
 Lemma closed_neighbourhoodDorigin (v : `V G) :
-  closed_neighbourhood v `\` [fset v] = open_neighbourhood v.
+  closed_neighbourhood v `\ v = open_neighbourhood v.
 Proof.
 rewrite/ closed_neighbourhood.
 apply fsetU1K.
 apply open_neighbourhood_not_closed.
 Qed.
-
-Search "fsetU1K".
 
 (*
 Lemma open_neighbourhood_not_closed (v : `V G) :
@@ -86,8 +68,6 @@ Proof.
 by split; rewrite /open_neighbourhood !inE /= fsetUC.
 Qed.
 
-Search fsetU fsetD.
-
 
 Definition is_overcomplete_graph G :=
   forall v w : `V G, v != w -> exists e : `E G, `d e = [fset v; w].
@@ -107,43 +87,21 @@ Proof.
 rewrite -cardfsT.
 split.
   move=> icg v.
-  Search (#|` _ | <= #|` _ | ).
-  About fsubset_leqif_cards.
-  Check #|` _ |.
   apply/eq_cardfs/eqP.
   rewrite eqEfsubset fsubsetT /=.
   apply/fsubsetP => u _.
   rewrite !inE.
   have[-> //|vu /=]:= eqVneq v u.
   apply/existsP.
-  Print is_complete_graph.
   have /(_ v u vu):= icg.
   by case=> e /eqP ?; exists e.
 move=> + v w /[1!eq_sym] wv => /(_ v) /esym /eq_leq H.
-have:= eqEfcard (closed_neighbourhood v) (fsetT (`V G)). rewrite fsubsetT H /= eq_sym eqEfcard => /andP [] + _.
+have:= eqEfcard (closed_neighbourhood v) [fset: `V G].
+rewrite fsubsetT H /= eq_sym eqEfcard => /andP [] + _.
 move=> /fsubsetP /(_ w).
-rewrite !inE (negPf wv) => /(_ erefl) /=. 
+rewrite !inE (negPf wv) => /(_ erefl) /=.
 by move=> /existsP [] e /eqP ? ; exists e.
 Qed.
-About eqEfcard.
-  (*
-  Search fsetT.
-  congr size.
-  apply/eqP; rewrite eqEfsubset.
-  congr (#|` _ |).
-  Set Printing All.
-  Check finSet _ : Type.
-  Check {fset _ } : eqType.
-  Check {fset _ } : choiceType.
-  Set Debug "tactic-unification".
-  apply/eqP; rewrite eqEfsubset.
-  apply/fsetP => u /=.
-  rewrite !inE.
-  rewrite/closed_neighbourhood.
-  rewrite/open_neighbourhood /=.
-  *)
-  Search size.
-  Print find_spec.
 
 End neighbourhood.
 
@@ -161,7 +119,7 @@ u \in `d e -> v \in `d f -> `d g != [fset u; v].
 Proof.
 move=> /induced_matchingP /(_ e f) /[apply] /[apply] /[apply] H ude vdf.
 apply/eqP => dguv.
-by case: (H g) => /fdisjointP => [/(_ u ude)|/(_ v vdf)]; rewrite dguv !inE eqxx // orbT. 
+by case: (H g) => /fdisjointP => [/(_ u ude)|/(_ v vdf)]; rewrite dguv !inE eqxx // orbT.
 Qed.
 
 Arguments induced_matching_edgeC {S}.
@@ -171,7 +129,7 @@ Local Lemma nindmatch_gt1_ (e : `E G) (v : `V G) :
   e \in sval (exists_nindmatch G) ->
   1 < nindmatch G ->
   v \in `d e ->
-  ~ is_independent_set (fsetT (`V G) `\` open_neighbourhood v).
+  ~ is_independent_set (~` open_neighbourhood v).
 Proof.
 case: (exists_nindmatch G) => I /= indI -> eI.
 rewrite (cardfsD1 e I) eI /= -[ltnLHS]addn0 ltn_add2l cardfs_gt0.
@@ -193,9 +151,8 @@ rewrite -in_biboundary biboundary_fsetMDdiag !inE /=.
 by rewrite in_fset_diag xdf ydf xy.
 Qed.
 
-Definition fsetC S := (fsetT (`V G) `\` S).
 
-Definition is_coindependent_set S := is_independent_set (fsetC S).
+Definition is_coindependent_set (S : {fset `V G}) := is_independent_set (~` S).
 
 Lemma open_neighbourhood_is_coindependent (v : `V G) :
   is_coindependent_set (closed_neighbourhood v) ->
@@ -233,7 +190,7 @@ Lemma nindmatch_gt1 (e : `E G) (v : `V G) :
   e \in sval (exists_nindmatch G) ->
   1 < nindmatch G ->
   v \in `d e ->
-  ~ is_independent_set (fsetT (`V G) `\` closed_neighbourhood v).
+  ~ is_independent_set (~` closed_neighbourhood v).
 Proof.
 move=> eI nind vde.
 have:= nindmatch_gt1_ eI nind vde.
@@ -243,17 +200,12 @@ Qed.
 Lemma nindmatch_gt1' (v : `V G) :
   1 < nindmatch G ->
   v \in VofESet (sval (exists_nindmatch G)) ->
-   ~ is_independent_set (fsetT (`V G) `\` closed_neighbourhood v).
+   ~ is_independent_set (~` closed_neighbourhood v).
 Proof.
 move=> nindgt1 /bigfcupP [] /= S /[!andbT] /imfsetP [] /= e eI -> vde.
 exact: (nindmatch_gt1 eI).
-Qed. 
+Qed.
 
 
 
 End neighbourhood_lemmas.
-
-
-
-
-

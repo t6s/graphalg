@@ -39,7 +39,7 @@ rewrite !inE eqxx orbT => /(_ erefl).
 have := H _ _ uS => /[apply].
 by apply; exists e.
 Qed.
-End pred.          
+End pred.
 
 Definition independent_set := [fset S : {fset `V G} | is_independent_set S].
 
@@ -98,7 +98,7 @@ under [in LHS]eq_forall => u.
       rewrite [X in ~ X](_ : _ = (`d e `<=` S /\ `d e = [fset u; v])); last first.
         by rewrite propeqE; split => -[] ?; [move-> | move<-].
       rewrite andC not_andE -implyE.
-      over.    
+      over.
     over.
   rewrite swap_imply_head.
   under eq_forall do rewrite curry_imply_head.
@@ -117,7 +117,7 @@ Qed.
 End classical.
 
 Lemma indepC_edgeI (S : {fset `E G}) :
-  is_independent_set (fsetT (`V G) `\` VofESet S) <->
+  is_independent_set ([fset: `V G] `\` VofESet S) <->
   forall e, edgeI S e.
 Proof.
 split.
@@ -155,13 +155,13 @@ Proof. Construct an independent set from a given indeuced matching.
 
 Lem.
 2 * (nmatch - nmatch) <= nindep
-*)          
+*)
 
 (* TODO: rename *)
 Lemma VDMmax_indep (M : {fset `E G}) :
   M \in maximal_matching G <->
   M \in matching G /\
-    (fsetT (`V G) `\` VofESet M) \in independent_set.
+    ([fset: `V G] `\` VofESet M) \in independent_set.
 Proof.
 rewrite -(rwP (independent_setP _)) /=.
 split.
@@ -186,7 +186,7 @@ split.
   exists (`d f) => //.
   rewrite andbT.
   apply /imfsetP.
-  by exists f.            
+  by exists f.
 case=> MmG.
 rewrite (rwP (is_independent_setP _)) indepC_edgeI /edgeI => H.
 apply maxmatch_edgeI_opp => //.
@@ -243,7 +243,7 @@ exists [arg max_(i > fset0 in independent_set G) #|` i|] => //.
 *)
 eexists; last by rewrite /nindep (bigmax_eq_arg _ fset0) ?fset0_independent.
 by case: arg_maxP => //; exact: fset0_independent.
-Qed.  
+Qed.
 
 (* Hirano and Matsuda *)
 Lemma nindmatch_leq_nindep (G : llugraph) : nindmatch G <= nindep G.
@@ -261,7 +261,7 @@ Lemma nmatch_minmatch_leq_nindep G :
 Proof.
 case: (exists_nminmatch G) => N /VDMmax_indep [] ? ? ->.
 set X := leqLHS.
-suff: X <= #|` fsetT (`V G) `\` VofESet N |.
+suff: X <= #|` [fset: `V G] `\` VofESet N |.
   move/leq_trans; apply.
   exact: leq_bigmax_cond.
 rewrite /X cardfsD fsetIT matching_double_card // doubleB cardfsT.

@@ -276,7 +276,7 @@ End matching.
 Module matching_trivIbound_counter_example.
 Definition V := 'I_2.
 Definition E := 'I_2.
-Definition d (_ : E) : {fset V} := fsetT V.
+Definition d (_ : E) : {fset V} := fsetT.
 Lemma axiom (e : E) : #|` d e | = 2.
 Proof. by rewrite cardfsT card_ord. Qed.
 Definition G := LooplessUndirectedGraph.mk axiom.
@@ -284,7 +284,7 @@ Definition G := LooplessUndirectedGraph.mk axiom.
 Example trivIbound_is_not_necessarily_matching :
   exists S : {fset `E G}, trivIbound S /\ ~ @is_matching G S.
 Proof.
-exists (fsetT (`E G)); split.
+exists [fset: `E G]; split.
   apply/trivIfsetP => A B /imfsetP [] e /= ? -> /imfsetP [] f /= ? ->.
   by rewrite /d eqxx.
 move/is_matchingP.
@@ -315,7 +315,7 @@ Definition G := LooplessUndirectedGraph.mk axiom.
 Example inj_boundary_is_not_necessarily_matching :
   exists S : {fset `E G}, inj_boundary S /\ ~ @is_matching G S.
 Proof.
-exists (fsetT (`E G)); split.
+exists [fset: `E G]; split.
   move => e f _ _ /=.
   rewrite /d.
   by case: ifPn; case: ifPn => /=; rewrite ?ord2_neq0;
@@ -356,7 +356,7 @@ rewrite H.
 by move/fset1P <-.
 Qed.
 
-Lemma matching_subT G : matching G `<=` fpowerset (fsetT _).
+Lemma matching_subT G : matching G `<=` fpowerset [fset: `E G].
 Proof.
 apply/fsubsetP => ? ?.
 rewrite fpowersetE.
