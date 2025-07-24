@@ -20,7 +20,8 @@ Definition classical_openNeighbourhood (v : `V G) :=
   [set w | exists e, e \in `E G /\ v \in `d(e) /\ w \in `d(e) ].
 *)
 
-Definition open_neighbourhood (v : `V G) := [fset w : `V G | [exists e, (e \in `E G) && (`d(e) == [fset v; w]) ]].
+Definition open_neighbourhood (v : `V G) :=
+  [fset w : `V G | [exists e, (e \in `E G) && (`d(e) == [fset v; w]) ]].
 
 Definition closed_neighbourhood (v : `V G) := v |` open_neighbourhood v.
 (* = [fset v] `|` open_neighbourhood v. *)
