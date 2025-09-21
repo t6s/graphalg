@@ -70,18 +70,6 @@ by split; rewrite /open_neighbourhood !inE /= fsetUC.
 Qed.
 
 
-Definition is_overcomplete_graph G :=
-  forall v w : `V G, v != w -> exists e : `E G, `d e = [fset v; w].
-
-Lemma complete_is_overcomplete :
-  is_complete_graph G -> is_overcomplete_graph G.
-Proof.
-by case.
-(*
-exact: proj2.
-*)
-Qed.
-
 Lemma neighbourhood_overcomplete :
   is_overcomplete_graph G <-> forall v : `V G, #|` closed_neighbourhood v | = #| `V G |.
 Proof.

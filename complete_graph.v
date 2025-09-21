@@ -158,9 +158,15 @@ Implicit Type G : llugraph.
 Definition is_KT G := isomorphic G (`K `V G).
 *)
 
+Definition is_overcomplete_graph G :=
+  forall v w : `V G, v != w -> exists e : `E G, `d e = [fset v; w].
+
 Definition is_complete_graph G :=
-  injective (fun e : `E G => `d e) /\
-    forall v w : `V G, v != w -> exists e : `E G, `d e = [fset v; w].
+  injective (fun e : `E G => `d e) /\ is_overcomplete_graph G.
+
+Lemma complete_graph_is_overcomplete G :
+  is_complete_graph G -> is_overcomplete_graph G.
+Proof. by case. Qed.
 
 Lemma KT_is_complete (T : finType) : is_complete_graph (`K T).
 Proof.
@@ -176,11 +182,11 @@ Lemma card_VKn n : #| `V `K_n | = n.
 Proof. exact: card_ord. Qed.
 
 Lemma card_Ecomplete_aux G :
-  is_complete_graph G ->
+  is_overcomplete_graph G ->
   fcover [fset biboundary e | e in `E G]  =
     ([fset: `V G] `*` [fset: `V G]) `\` fset_diag [fset: `V G].
 Proof.
-rewrite /is_complete_graph=> -[] d_inj d_surj.
+move=> d_surj.
 rewrite /fcover -imfsetT bigfcup_image.
 under eq_bigr do rewrite biboundary_fsetMDdiag.
 apply/fsetP=> -[a b]; apply/idP/idP.
@@ -197,7 +203,7 @@ Qed.
 Lemma card_Ecomplete G :
   is_complete_graph G -> (2 * #| `E G | = #| `V G | * (#| `V G | - 1)).
 Proof.
-move=> /[dup] -[] /boundary_biboundary_inj d_inj d_surj.
+case=> /boundary_biboundary_inj d_inj.
 move=> /card_Ecomplete_aux /(congr1 (size \o val)) /=.
 rewrite cardfs_diagC cardfsT => <-.
 rewrite (eqTleqif (leq_card_fcover _)); last first.
@@ -235,10 +241,10 @@ by rewrite !inE in_fset_diag in_fsetT (negPf ab).
 Qed.
 
 Lemma nindmatch_complete G :
-  is_complete_graph G ->
+  is_overcomplete_graph G ->
   nindmatch G <= 1 ?= iff (2 <= #| `V G |).
 Proof.
-case=> /= injb cmp.
+move=> cmp.
 have-> : (2 <= #| `V G |) = (1 <= #| `E G |).
   apply/idP/idP.
     move/card_gt1P=> [] x [] y [] xVG yVG xy.
@@ -275,9 +281,9 @@ by case=> /fset0Pn; apply; [exists v1 | exists v2];
 Qed.
 
 Lemma maximal_matching_complete G (S : {fset `E G}) :
-  is_complete_graph G -> S \in maximal_matching G ->  #|` S | = #| `V G | ./2.
+  is_overcomplete_graph G -> S \in maximal_matching G ->  #|` S | = #| `V G | ./2.
 Proof.
-case=> injb cmp SmG.
+move=> cmp SmG.
 apply/eqP; move: SmG; apply: contraLR.
 rewrite neq_ltn => /orP [] H; apply/maximal_matchingP => -[]; last first.
   move => SmG _.
@@ -315,14 +321,14 @@ case/orP => [/eqP -> | xS]; case/orP => [/eqP -> | yS]; rewrite ?eqxx //= => xy.
 - by move/matchingP: SmG; apply.
 Qed.
 
-Lemma nmatch_complete G : is_complete_graph G -> nmatch G = #| `V G | ./2.
+Lemma nmatch_complete G : is_overcomplete_graph G -> nmatch G = #| `V G | ./2.
 Proof.
 move/maximal_matching_complete=> H.
 rewrite -nmaxmatchE.
 by have:= exists_nmaxmatch G => -[] M /H -> ->.
 Qed.
 
-Lemma nminmatch_complete G : is_complete_graph G -> nminmatch G = nmatch G.
+Lemma nminmatch_complete G : is_overcomplete_graph G -> nminmatch G = nmatch G.
 Proof.
 move=> icg.
 move/maximal_matching_complete: (icg) => H.
