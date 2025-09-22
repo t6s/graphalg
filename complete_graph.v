@@ -435,8 +435,6 @@ rewrite /nindmatch /=.
 rewrite /induced_matching /=.
 Abort.
 
-Search "minn".
-
 Lemma nminmatch_complete_bipartite (V1 V2 : finType) :
   nminmatch (`K2 V1 V2) = minn #| V1| #| V2|.
 Proof.

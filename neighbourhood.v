@@ -44,25 +44,6 @@ apply fsetU1K.
 apply open_neighbourhood_not_closed.
 Qed.
 
-(*
-Lemma open_neighbourhood_not_closed (v : `V G) :
-  v \notin open_neighbourhood v.
-Proof.
-rewrite !inE /=.
-apply/existsP.
-case=> e /eqP.
-rewrite fsetUid.
-About congr1.
-About size.
-(*
-move/(congr1 (size \o val) ) => /=.
-move/(congr1 (fun A : {fset `V G} => size A) ).
- *)
-move/(congr1 (fun A => #|` A | )).
-by rewrite boundary_card2 cardfs1.
-Qed.
-*)
-
 Lemma open_neighbourhood_eachother (u v : `V G) :
   u \in open_neighbourhood v <-> v \in open_neighbourhood u.
 Proof.
