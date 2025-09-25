@@ -142,7 +142,7 @@ case: e => e /= /imfsetP [] [a b] /= /imfsetP [] [a' b'] /=.
 rewrite !inE /= in_fset_diag !inE /= => p [] -> -> ->.
 by rewrite cardfs2 p.
 Qed.
-Definition t := LooplessUndirectedGraph.mk axiom.
+Definition t := llumk axiom.
 End def.
 End CompleteGraph.
 
@@ -346,7 +346,7 @@ Definition E := (V1 * V2)%type.
 Definition boundary (e : E) : {fset V} := [fset inl e.1; inr e.2].
 Lemma axiom (e : E) : #|` boundary e| = 2.
 Proof. by case: e => x y; rewrite /boundary /= cardfs2. Qed.
-Definition t := LooplessUndirectedGraph.mk axiom.
+Definition t := llumk axiom.
 End def.
 Section lemmas.
 Lemma boundary_inj V1 V2 : injective (@boundary V1 V2).

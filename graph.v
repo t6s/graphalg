@@ -1,8 +1,7 @@
+From HB Require Import structures.
 From mathcomp Require Import all_ssreflect. (* from mathcomp *)
 From mathcomp Require Import finmap multiset. (* from finmap *)
 From mathcomp Require Import mathcomp_extra classical_sets. (* from analysis *)
-(*From HB Require Import structures.
-From monae Require Import hierarchy.*)
 Require Import mathcomp_extra.
 
 Set Implicit Arguments.
@@ -15,28 +14,14 @@ Reserved Notation "`V" (at level 0, format "`V").
 Reserved Notation "`E" (at level 0, format "`E").
 Reserved Notation "`d" (at level 0, format "`d").
 
-(*
-HB.mixin Record isEnumerableMonad (M : UU0 -> UU0) of Monad M := {
-    enum : forall A : UU0, M A -> seq A;
-!!!!!
-Module MonadicGraph.
-Section def.
-Variable M : monad.
-Record t := mk {
-  V : finType;
-  E : finType;
-  boundary : E -> M V;
-  _ : forall e : E, size (boundary e) = 2;
-}.
-End def.
-Module Exports.
-Notation ugraph := t.
-(*Notation "`d" := (boundary).*)
-End Exports.
-End MonadicGraph.
-*)
-
 (* undirected graph *)
+(*
+#[key="T"]
+HB.mixin Record isUndirectedGraph (V E : Type) T of Choice V & Choice E := {
+  boundary : E -> {mset V};
+  size_boundary : forall e : E, size (boundary e) = 2;
+}.
+*)
 Module UndirectedGraph.
 Section def.
 Local Open Scope mset_scope.
@@ -53,7 +38,9 @@ Notation ugraph := t.
 End Exports.
 End UndirectedGraph.
 
+
 (* undirected, loopless graph *)
+(*
 Module LooplessUndirectedGraph.
 Section def.
 Record t := mk {
@@ -72,14 +59,40 @@ Notation "`V" := V.
 End Exports.
 End LooplessUndirectedGraph.
 Export LooplessUndirectedGraph.Exports.
+*)
+
+(*
+#[key="T"]
+HB.mixin Record isUndirectedGraph (V E : Type) T of Choice V & Choice E := {
+  boundary : E -> finset_of (Phant V);
+  size_boundary : forall e : E, size (boundary e) = 2;
+}.
+*)
 
 Local Open Scope fset_scope.
+
+HB.mixin Record isLooplessUndirectedGraph T := {
+  vertex : finType;
+  edge : finType;
+  boundary : edge -> finset_of (Phant vertex);
+  size_boundary : forall e : edge, size (boundary e) = 2;
+}.
+
+#[short(type=llugraph)]
+HB.structure Definition LooplessUndirectedGraph := {T of isLooplessUndirectedGraph T}.
+
+Arguments vertex : clear implicits.
+Arguments edge : clear implicits.
+
+Notation "`V" := vertex.
+Notation "`E" := edge.
+Notation "`d" := boundary.
 
 
 Section llugraph_lemmas.
 
 Lemma boundary_card2 G : forall e : `E G , #|` `d e| = 2.
-Proof. by case: G. Qed.
+Proof. exact: size_boundary. Qed.
 
 Lemma boundary_exists G (e : `E G) : exists v : `V G, v \in `d e.
 Proof.
@@ -141,7 +154,7 @@ apply: (iffP idP) => H.
 Qed.
 
 Definition inj_boundary :=
-  {in S & S, injective (@LooplessUndirectedGraph.boundary G)}.
+  {in S & S, injective (@boundary G)}.
 
 Definition trivIbound := trivIfset [fset `d x | x in S].
 
@@ -279,7 +292,8 @@ Definition E := 'I_2.
 Definition d (_ : E) : {fset V} := fsetT.
 Lemma axiom (e : E) : #|` d e | = 2.
 Proof. by rewrite cardfsT card_ord. Qed.
-Definition G := LooplessUndirectedGraph.mk axiom.
+HB.instance Definition _ := isLooplessUndirectedGraph.Build 'I_2 axiom.
+Notation G := 'I_2.
 
 Example trivIbound_is_not_necessarily_matching :
   exists S : {fset `E G}, trivIbound S /\ ~ @is_matching G S.
@@ -310,14 +324,15 @@ Definition d (e : E) : {fset V} :=
   if e == e0 then [fset v0; v1] else [fset v1; v2].
 Lemma axiom (e : E) : #|` d e | = 2.
 Proof. by rewrite /d; case: ifP => _; rewrite cardfs2. Qed.
-Definition G := LooplessUndirectedGraph.mk axiom.
+HB.instance Definition _ := isLooplessUndirectedGraph.Build unit axiom.
+Notation G := unit.
 
 Example inj_boundary_is_not_necessarily_matching :
   exists S : {fset `E G}, inj_boundary S /\ ~ @is_matching G S.
 Proof.
 exists [fset: `E G]; split.
   move => e f _ _ /=.
-  rewrite /d.
+  rewrite (_ : `d = d) // /d.
   by case: ifPn; case: ifPn => /=; rewrite ?ord2_neq0;
      move=> /eqP -> /eqP -> // /eqP /fset_eqP /(_ ord0) /[!inE].
 move /is_matchingP /(_ e0 e1) /[!inE] /(_ erefl erefl erefl).
@@ -1170,3 +1185,10 @@ by rewrite -ltnNge.
 Qed.
 
 End matching_number_lemmas.
+
+Section unstable.
+Context {V E : finType} {d : E -> {fset V}}.
+Variable (axiom : forall e : E, #|` d e | = 2).
+
+Definition llumk := HB.pack_for llugraph E (isLooplessUndirectedGraph.Build E axiom).
+End unstable.
