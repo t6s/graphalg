@@ -166,7 +166,7 @@ Proof.
 rewrite -(rwP (independent_setP _)) /=.
 split.
   move => Mmax.
-  split; first by case/maximal_matchingP: Mmax.
+  split; first by move: Mmax; rewrite inE; case.
   move => u v.
   rewrite !inE !andbT => uM vM.
   case => e deuv.
@@ -199,8 +199,7 @@ Lemma im_get1_boundary_indep (M : {fset `E G}) :
   M \in induced_matching G ->
         [fset get1_boundary e | e in M] \in independent_set.
 Proof.
-move=> /[dup] Mind /induced_matchingP Mind'.
-rewrite !inE /=.
+move=> /[dup] Mind /[!inE] Mind' /=.
 apply/forallP => x.
 apply/fsubsetP.
 have:= boundary_sig2 x => -[] [] u v /= [] /[swap] dxuv /[swap] /[!dxuv] dxM.
@@ -249,7 +248,7 @@ Qed.
 Lemma nindmatch_leq_nindep (G : llugraph) : nindmatch G <= nindep G.
 Proof.
 case: (exists_nindmatch G) => M Mind nM.
-have mM : M \in matching G by exact: induced_sub_matching.
+have mM : M \in matching G by rewrite inE; apply/induced_sub_matching/set_mem.
 have:= im_get1_boundary_indep Mind.
 set T := [fset get1_boundary e | e in M].
 have TM: #|` T| = #|` M| by apply: card_in_imfset => ? ? /=; exact: (get1_boundary_inj mM).

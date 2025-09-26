@@ -258,14 +258,14 @@ apply/leqifP; case: ifPn=> [EGgt0 |]; last first.
 have: 1 <= nindmatch G by rewrite ltnNge leqn0 nindmatch_eq0 -lt0n.
 rewrite leq_eqVlt=> /orP [/eqP -> // |].
 have:= exists_nindmatch G => -[] M Mim ->.
-have:= Mim => /induced_matchingP Mim'.
+have:= Mim; rewrite inE => Mim'.
 rewrite cardfE=> /card_gt1P /= [] e1 [] e2 [] ? ? e12.
 exfalso.
 have: `d (\val e2) `\` `d (\val e1) != fset0.
   rewrite fsetD_eq0; apply/negP=> /fsubset_leqif_cards.
   rewrite !boundary_card2.
   apply/leqif_refl/eqP=> /esym de12.
-  have:= matching_inj_boundary (induced_sub_matching Mim).
+  have:= matching_inj_boundary (mem_set (induced_sub_matching (set_mem Mim))).
   move/(_ (\val e1) (\val e2) (fsvalP _) (fsvalP _) de12)/val_inj.
   by apply/eqP.
 pose v1 := get1_boundary (\val e1).
@@ -285,7 +285,7 @@ Lemma maximal_matching_complete G (S : {fset `E G}) :
 Proof.
 move=> cmp SmG.
 apply/eqP; move: SmG; apply: contraLR.
-rewrite neq_ltn => /orP [] H; apply/maximal_matchingP => -[]; last first.
+rewrite neq_ltn => /orP [] H; apply/negP; rewrite inE => -[]; last first.
   move => SmG _.
   have := double_nmatch_leq_cardVG G.
   rewrite -geq_half_double.
@@ -307,7 +307,7 @@ have eS : e \notin S.
   by rewrite in_imfset.
 have := Smax (e |` S).
 move/(_ _)/negP; apply; first exact: fproperU1.
-apply/matchingP => x y; rewrite !inE.
+rewrite inE => x y; rewrite !inE.
 case/orP => [/eqP -> | xS]; case/orP => [/eqP -> | yS]; rewrite ?eqxx //= => xy.
 - apply/fdisjointP=> u.
   by rewrite deab !inE=> /orP [] /eqP ->; apply/negP => ad;
@@ -318,7 +318,7 @@ case/orP => [/eqP -> | xS]; case/orP => [/eqP -> | yS]; rewrite ?eqxx //= => xy.
   by rewrite deab !inE=> /orP [] /eqP ->; apply/negP => ad;
      [move/bigfcupP: aS | move/bigfcupP: bS];
      apply; exists (`d x) => //; rewrite in_imfset.
-- by move/matchingP: SmG; apply.
+- by move: SmG; rewrite inE; apply.
 Qed.
 
 Lemma nmatch_complete G : is_overcomplete_graph G -> nmatch G = #| `V G | ./2.

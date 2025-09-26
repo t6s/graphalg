@@ -87,7 +87,7 @@ f \in S ->
 e != f ->
 u \in `d e -> v \in `d f -> `d g != [fset u; v].
 Proof.
-move=> /induced_matchingP /(_ e f) /[apply] /[apply] /[apply] H ude vdf.
+rewrite inE => /(_ e f) /[apply] /[apply] /[apply] H ude vdf.
 apply/eqP => dguv.
 by case: (H g) => /fdisjointP => [/(_ u ude)|/(_ v vdf)]; rewrite dguv !inE eqxx // orbT.
 Qed.
